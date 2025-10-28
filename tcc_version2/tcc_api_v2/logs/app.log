@@ -1,0 +1,4 @@
+[2025-10-18T05:12:35+02:00] Excepción: Failed opening required 'C:\xampp\htdocs\tcc_api_v2\routes/../auth/registro.php' (include_path='C:\xampp\php\PEAR')
+[2025-10-18T05:19:01+02:00] Excepción: Failed opening required 'C:\xampp\htdocs\tcc_api_v2\routes/../auth/registro.php' (include_path='C:\xampp\php\PEAR')
+[2025-10-18T05:19:39+02:00] Excepción: Failed opening required 'C:\xampp\htdocs\tcc_api_v2\routes/../auth/registro.php' (include_path='C:\xampp\php\PEAR')
+[2025-10-18T05:35:18+02:00] Excepción: Failed opening required 'C:\xampp\htdocs\tcc_api_v2\routes/../auth/registro.php' (include_path='C:\xampp\php\PEAR')
