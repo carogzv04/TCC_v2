@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'utils/session_manager.dart';
 
@@ -34,12 +35,27 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'TCC App',
+
+       
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es', 'ES'),
+          Locale('es', 'UY'),
+          Locale('en', 'US'),
+        ],
+        locale: const Locale('es', 'ES'),
+
         theme: ThemeData(
           useMaterial3: true,
           colorSchemeSeed: Colors.deepPurple,
           scaffoldBackgroundColor: const Color(0xFFD5F5DC),
         ),
 
+        
         home: isLogged ? const HomeScreen() : const WelcomeScreen(),
 
         routes: {

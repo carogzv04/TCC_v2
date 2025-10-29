@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.8.8/tcc_api_v2';
+  static const String baseUrl = 'http://localhost:8080/tcc_api_v2';
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
   };
