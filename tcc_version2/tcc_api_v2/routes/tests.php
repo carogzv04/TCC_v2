@@ -1,13 +1,9 @@
 <?php
-// ============================================
-//  routes/tests.php
-//  Obtener test según edad, guardar respuestas y listar tests realizados
-// ============================================
-
 require_once __DIR__ . '/../db.php';
 
-
-// --- Obtener test según edad ---
+/* ============================================================
+   🧩 OBTENER TEST SEGÚN EDAD
+   ============================================================ */
 Router::get('/tests/por-edad', function() {
     $usuario_id = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null;
 
@@ -18,7 +14,7 @@ Router::get('/tests/por-edad', function() {
     try {
         $pdo = get_pdo();
 
-        // Obtener fecha de nacimiento
+        // Obtener fecha de nacimiento del usuario
         $stmt = $pdo->prepare('SELECT fecha_nacimiento FROM usuarios WHERE id_usuarios = ?');
         $stmt->execute([$usuario_id]);
         $usr = $stmt->fetch();
@@ -36,17 +32,26 @@ Router::get('/tests/por-edad', function() {
                             FROM tests 
                             WHERE activo = 1 
                               AND :edad BETWEEN rango_edad_min AND rango_edad_max
-                            ORDER BY fecha_creacion DESC LIMIT 1');
+                            ORDER BY fecha_creacion DESC 
+                            LIMIT 1');
         $t->execute(['edad' => $edad]);
         $test = $t->fetch();
 
         if (!$test) {
-            json_response(false, 'No hay test disponible para esta edad', null, 404);
+            // Sin test disponible para esa edad
+            json_response(true, 'No hay test disponible para esta edad.', [
+                'test_id' => null,
+                'test_key' => null,
+                'test_nombre' => null,
+                'test_descripcion' => null,
+                'edad' => $edad,
+                'preguntas' => []
+            ]);
         }
 
         $test_id = (int)$test['id_test'];
 
-        // Preguntas
+        // Obtener preguntas del test
         $p = $pdo->prepare('SELECT id_preguntas, numero_pregunta, texto, media_tipo, media_url
                             FROM preguntas
                             WHERE test_id = ?
@@ -55,10 +60,18 @@ Router::get('/tests/por-edad', function() {
         $preguntas = $p->fetchAll();
 
         if (!$preguntas) {
-            json_response(false, 'El test no tiene preguntas registradas', null, 404);
+            // Test sin preguntas registradas
+            json_response(true, 'El test no tiene preguntas registradas.', [
+                'test_id' => $test_id,
+                'test_key' => $test['test_key'],
+                'test_nombre' => $test['test_nombre'],
+                'test_descripcion' => $test['test_descripcion'],
+                'edad' => $edad,
+                'preguntas' => []
+            ]);
         }
 
-        // Opciones
+        // Obtener opciones para cada pregunta
         $op = $pdo->prepare('SELECT id_opciones, preguntas_id, codigo_op, texto_op
                              FROM opciones_respuesta
                              WHERE preguntas_id = ?
@@ -70,19 +83,19 @@ Router::get('/tests/por-edad', function() {
             $opciones = $op->fetchAll();
 
             $preguntasConOpciones[] = [
-                'id_preguntas' => (int)$preg['id_preguntas'],
+                'id' => (int)$preg['id_preguntas'],
                 'numero_pregunta' => (int)$preg['numero_pregunta'],
-                'texto' => $preg['texto'],
-                'media_tipo' => $preg['media_tipo'],
-                'media_url' => $preg['media_url'],
+                'texto' => $preg['texto'] ?? '',
+                'media_tipo' => $preg['media_tipo'] ?? null,
+                'media_url' => $preg['media_url'] ?? null,
                 'opciones' => array_map(function ($o) {
                     return [
                         'id_opciones' => (int)$o['id_opciones'],
                         'preguntas_id' => (int)$o['preguntas_id'],
-                        'codigo_op' => strtoupper($o['codigo_op']),
-                        'texto_op' => $o['texto_op']
+                        'codigo_op' => strtoupper($o['codigo_op'] ?? ''),
+                        'texto' => $o['texto_op'] ?? ''
                     ];
-                }, $opciones)
+                }, $opciones ?: [])
             ];
         }
 
@@ -101,8 +114,9 @@ Router::get('/tests/por-edad', function() {
     }
 });
 
-
-// --- Guardar respuestas de test ---
+/* ============================================================
+   💾 GUARDAR RESPUESTAS DE TEST
+   ============================================================ */
 Router::post('/tests/guardar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -134,8 +148,12 @@ Router::post('/tests/guardar', function() {
         $insertDetalle = $pdo->prepare('INSERT INTO detalle_respuestas (ru_id, preguntas_id, or_id) VALUES (?, ?, ?)');
 
         foreach ($respuestas as $r) {
-            $preguntaId = (int)$r['preguntas_id'];
-            $codigoOp = strtoupper(trim($r['codigo_op']));
+            $preguntaId = (int)($r['preguntas_id'] ?? 0);
+            $codigoOp = strtoupper(trim($r['codigo_op'] ?? ''));
+
+            if (!$preguntaId || !$codigoOp) {
+                throw new Exception('Datos de respuesta incompletos.');
+            }
 
             $buscarOpcion->execute([$preguntaId, $codigoOp]);
             $opcion = $buscarOpcion->fetch();
@@ -155,6 +173,9 @@ Router::post('/tests/guardar', function() {
     }
 });
 
+/* ============================================================
+   📜 LISTAR TESTS REALIZADOS
+   ============================================================ */
 Router::get('/tests/mis-tests', function() {
     $usuario_id = $_GET['usuario_id'] ?? null;
 
