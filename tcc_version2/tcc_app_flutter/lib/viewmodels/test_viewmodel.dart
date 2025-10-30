@@ -7,20 +7,38 @@ class TestViewModel extends ChangeNotifier {
   // Respuestas seleccionadas: {id_pregunta: codigo_op}
   Map<int, String> respuestasSeleccionadas = {};
 
-  // ===== CARGAR PREGUNTAS DESDE API =====
+
   Future<void> cargarPreguntasDesdeApi(List<dynamic> data) async {
-    preguntas = List<Map<String, dynamic>>.from(data);
+    print('🧠 Cargando preguntas desde API...');
+    preguntas = [];
+
+    for (var i = 0; i < data.length; i++) {
+      final elemento = data[i];
+      if (elemento is Map<String, dynamic>) {
+        preguntas.add({
+          'id': elemento['id'],
+          'texto': elemento['texto'],
+          'opciones': elemento['opciones'] is List
+              ? List<Map<String, dynamic>>.from(elemento['opciones'])
+              : [],
+        });
+      } else {
+        print('⚠️ Elemento $i inválido en data: $elemento');
+      }
+    }
+
+    print('✅ Total de preguntas cargadas: ${preguntas.length}');
     respuestasSeleccionadas.clear();
     notifyListeners();
   }
 
-  // ===== SELECCIONAR RESPUESTA =====
+
+
   void seleccionarRespuesta(int idPregunta, String codigoOpcion) {
     respuestasSeleccionadas[idPregunta] = codigoOpcion;
     notifyListeners();
   }
 
-  // ===== LIMPIAR TODAS LAS RESPUESTAS =====
   void limpiarRespuestas() {
     respuestasSeleccionadas.clear();
     notifyListeners();

@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../db.php';
 
-/* ============================================================
-   🧩 OBTENER TEST SEGÚN EDAD
-   ============================================================ */
+
 Router::get('/tests/por-edad', function() {
     $usuario_id = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null;
 
@@ -114,9 +112,7 @@ Router::get('/tests/por-edad', function() {
     }
 });
 
-/* ============================================================
-   💾 GUARDAR RESPUESTAS DE TEST
-   ============================================================ */
+
 Router::post('/tests/guardar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -165,17 +161,57 @@ Router::post('/tests/guardar', function() {
             $insertDetalle->execute([$ru_id, $preguntaId, (int)$opcion['id_opciones']]);
         }
 
+
+
+        $calc = $pdo->prepare("
+            SELECT 
+                SUM(CASE WHEN o.codigo_op = 'A' THEN 1 ELSE 0 END) AS total_A,
+                SUM(CASE WHEN o.codigo_op = 'B' THEN 1 ELSE 0 END) AS total_B
+            FROM detalle_respuestas d
+            INNER JOIN opciones_respuesta o ON o.id_opciones = d.or_id
+            WHERE d.ru_id = ?
+        ");
+        $calc->execute([$ru_id]);
+        $tot = $calc->fetch(PDO::FETCH_ASSOC);
+
+        $total = ($tot['total_A'] + $tot['total_B']) ?: 1;
+        $porcentaje_A = round(($tot['total_A'] / $total) * 100, 2);
+        $porcentaje_B = round(($tot['total_B'] / $total) * 100, 2);
+
+        // Determinar estilo ganador (ejemplo simple)
+        $estilo_id = ($porcentaje_A >= $porcentaje_B) ? 1 : 2;
+
+        // Guardar resultado resumido
+        $insertRes = $pdo->prepare("
+            INSERT INTO resultados_usuario (usuario_id, test_id, estilo_id, porcentaje, fecha_resultado)
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        $insertRes->execute([$usuario_id, $test_id, $estilo_id, max($porcentaje_A, $porcentaje_B)]);
+
+        // ============================================================
+
         $pdo->commit();
-        json_response(true, 'Respuestas guardadas correctamente', ['ru_id' => $ru_id], 201);
+
+        $dataResultado = [
+            'ru_id' => $ru_id,
+            'porcentajes' => [
+                'A' => $porcentaje_A,
+                'B' => $porcentaje_B
+            ],
+            'estilo_id' => $estilo_id
+        ];
+
+        json_response(true, 'Respuestas guardadas correctamente', $dataResultado, 201);
+
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         json_response(false, 'Error al guardar resultado: ' . $e->getMessage(), null, 500);
     }
 });
 
-/* ============================================================
-   📜 LISTAR TESTS REALIZADOS
-   ============================================================ */
+
+
+
 Router::get('/tests/mis-tests', function() {
     $usuario_id = $_GET['usuario_id'] ?? null;
 
