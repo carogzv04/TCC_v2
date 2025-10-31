@@ -161,36 +161,36 @@ Router::post('/tests/guardar', function() {
             $insertDetalle->execute([$ru_id, $preguntaId, (int)$opcion['id_opciones']]);
         }
 
+        // Confirma inserciones antes de calcular
+        $pdo->commit();
 
+        $ru_id = intval($ru_id);
 
         $calc = $pdo->prepare("
             SELECT 
                 SUM(CASE WHEN o.codigo_op = 'A' THEN 1 ELSE 0 END) AS total_A,
                 SUM(CASE WHEN o.codigo_op = 'B' THEN 1 ELSE 0 END) AS total_B
-            FROM detalle_respuestas d
-            INNER JOIN opciones_respuesta o ON o.id_opciones = d.or_id
-            WHERE d.ru_id = ?
+            FROM detalle_respuestas AS d
+            INNER JOIN opciones_respuesta AS o ON o.id_opciones = d.or_id
+            WHERE d.ru_id = :ru_id
         ");
-        $calc->execute([$ru_id]);
-        $tot = $calc->fetch(PDO::FETCH_ASSOC);
+        $calc->execute(['ru_id' => $ru_id]);
+        $tot = $calc->fetch(PDO::FETCH_ASSOC) ?: ['total_A' => 0, 'total_B' => 0];
 
-        $total = ($tot['total_A'] + $tot['total_B']) ?: 1;
+        error_log("🧩 DEBUG: resultado del cálculo: " . json_encode($tot));
+
+        $total = max(($tot['total_A'] + $tot['total_B']), 1);
         $porcentaje_A = round(($tot['total_A'] / $total) * 100, 2);
         $porcentaje_B = round(($tot['total_B'] / $total) * 100, 2);
 
-        // Determinar estilo ganador (ejemplo simple)
         $estilo_id = ($porcentaje_A >= $porcentaje_B) ? 1 : 2;
 
-        // Guardar resultado resumido
+        // Guardar resumen
         $insertRes = $pdo->prepare("
             INSERT INTO resultados_usuario (usuario_id, test_id, estilo_id, porcentaje, fecha_resultado)
             VALUES (?, ?, ?, ?, NOW())
         ");
         $insertRes->execute([$usuario_id, $test_id, $estilo_id, max($porcentaje_A, $porcentaje_B)]);
-
-        // ============================================================
-
-        $pdo->commit();
 
         $dataResultado = [
             'ru_id' => $ru_id,
@@ -201,6 +201,8 @@ Router::post('/tests/guardar', function() {
             'estilo_id' => $estilo_id
         ];
 
+        error_log("✅ totales calculados: A={$porcentaje_A} B={$porcentaje_B} estilo={$estilo_id}");
+
         json_response(true, 'Respuestas guardadas correctamente', $dataResultado, 201);
 
     } catch (Throwable $e) {
@@ -208,7 +210,6 @@ Router::post('/tests/guardar', function() {
         json_response(false, 'Error al guardar resultado: ' . $e->getMessage(), null, 500);
     }
 });
-
 
 
 
