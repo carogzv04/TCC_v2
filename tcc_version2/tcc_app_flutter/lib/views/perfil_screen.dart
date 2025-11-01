@@ -1,71 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
+import 'perfil_edit_screen.dart';
 
-class PerfilScreen extends StatefulWidget {
+class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
 
   @override
-  State<PerfilScreen> createState() => _PerfilScreenState();
-}
-
-class _PerfilScreenState extends State<PerfilScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nombreController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _fechaNacimientoController = TextEditingController();
-  String? _sexoSeleccionado;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarDatosUsuario();
-  }
-
-  void _cargarDatosUsuario() {
-    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-    _nombreController.text = usuario.nombreCompleto ?? '';
-    _emailController.text = usuario.email ?? '';
-    _sexoSeleccionado = null; // No tenemos aún este dato persistido
-  }
-
-  Future<void> _actualizarPerfil() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-    final body = {
-      'usuario_id': usuario.usuarioId,
-      'nombre_completo': _nombreController.text.trim(),
-      'email': _emailController.text.trim(),
-      'fecha_nacimiento': _fechaNacimientoController.text.trim(),
-      'sexo': _sexoSeleccionado ?? '',
-    };
-
-    final response = await ApiService().modificarPerfil(body);
-    setState(() => _isLoading = false);
-
-    if (response['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Perfil actualizado')),
-      );
-      usuario.nombreCompleto = _nombreController.text.trim();
-      usuario.email = _emailController.text.trim();
-      usuario.notifyListeners();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Error al actualizar perfil')),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    
     final usuario = Provider.of<UsuarioViewModel>(context);
+    if (usuario.isLoggedIn && usuario.usuarioId != null) {
+    usuario.actualizarPerfil();
+  }
 
+  print('👤 [PerfilScreen] Estado actual del usuario: '
+      'isLoggedIn=${usuario.isLoggedIn}, '
+      'id=${usuario.usuarioId}, '
+      'nombre=${usuario.nombreCompleto}, '
+      'email=${usuario.email}');
+      
     return Scaffold(
       backgroundColor: const Color(0xFFD5F5DC),
       appBar: AppBar(
@@ -73,127 +27,133 @@ class _PerfilScreenState extends State<PerfilScreen> {
         title: const Text('Mi Perfil'),
         foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Información del usuario',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Campo nombre completo
-                TextFormField(
-                  controller: _nombreController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre completo',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                  (value == null || value.isEmpty) ? 'Ingrese su nombre' : null,
-                ),
-                const SizedBox(height: 20),
-
-                // Campo correo
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Ingrese su correo electrónico';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Correo inválido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Campo fecha nacimiento
-                TextFormField(
-                  controller: _fechaNacimientoController,
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Fecha de nacimiento',
-                    prefixIcon: Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(),
-                  ),
-                  onTap: () async {
-                    final DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime(2000),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                      locale: const Locale('es', 'ES'),
-                    );
-                    if (picked != null) {
-                      _fechaNacimientoController.text =
-                      "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-                    }
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Campo sexo
-                DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Sexo',
-                    prefixIcon: Icon(Icons.wc),
-                    border: OutlineInputBorder(),
-                  ),
-                  value: _sexoSeleccionado,
-                  items: const [
-                    DropdownMenuItem(value: 'M', child: Text('Masculino')),
-                    DropdownMenuItem(value: 'F', child: Text('Femenino')),
-                    DropdownMenuItem(value: 'O', child: Text('Otro')),
-                  ],
-                  onChanged: (value) {
-                    setState(() => _sexoSeleccionado = value);
-                  },
-                ),
-                const SizedBox(height: 30),
-
-                // Botón actualizar
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _actualizarPerfil,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
+      body: usuario.isLoggedIn
+          ? Center(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // ===== Avatar =====
+                    const CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.deepPurple,
+                      child: Icon(Icons.person, size: 70, color: Colors.white),
                     ),
-                  )
-                      : const Text('Actualizar perfil'),
+                    const SizedBox(height: 20),
+
+                    // ===== Nombre =====
+                    Text(
+                      usuario.nombreCompleto ?? 'Nombre no disponible',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+
+                    // ===== Email =====
+                    Text(
+                      usuario.email ?? 'Correo no disponible',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // ===== Datos adicionales (placeholders) =====
+                    _buildInfoTile(
+                      icon: Icons.cake,
+                      label: 'Fecha de nacimiento',
+                      value: 'No especificada',
+                    ),
+                    _buildInfoTile(
+                      icon: Icons.wc,
+                      label: 'Sexo',
+                      value: 'No especificado',
+                    ),
+                    _buildInfoTile(
+                      icon: Icons.medical_information,
+                      label: 'Diagnóstico previo',
+                      value: 'No registrado',
+                    ),
+                    const SizedBox(height: 30),
+
+                    // ===== Botón para editar =====
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const PerfilEditScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Editar perfil'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 40, vertical: 14),
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+            )
+          : const Center(
+              child: Text(
+                'No se ha iniciado sesión.',
+                style: TextStyle(fontSize: 18, color: Colors.black54),
+              ),
+            ),
+    );
+  }
+
+  // Widget auxiliar para mostrar los campos con ícono
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.deepPurple),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: const TextStyle(
+                        color: Colors.black54, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(value,
+                    style: const TextStyle(
+                        color: Colors.black87, fontSize: 16)),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

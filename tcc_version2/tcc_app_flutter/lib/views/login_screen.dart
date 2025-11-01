@@ -19,33 +19,58 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+  setState(() => _isLoading = true);
 
-    final response = await ApiService()
-        .login(_emailController.text.trim(), _passwordController.text.trim());
+  final email = _emailController.text.trim();
+  final password = _passwordController.text.trim();
 
-    setState(() => _isLoading = false);
+  print('📤 [Login] Enviando credenciales: email=$email');
 
-    if (response['success'] == true) {
-      // Guardar sesión global
-      await SessionManager.saveSession(response['data']);
-      // Actualizar ViewModel
-      await Provider.of<UsuarioViewModel>(context, listen: false)
-          .guardarUsuario(response['data']);
-      // Redirigir al Home
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Error al iniciar sesión')),
-      );
-    }
+  final response = await ApiService().login(email, password);
+
+  print('📥 [Login] Respuesta del servidor: $response');
+
+  setState(() => _isLoading = false);
+
+  if (response['success'] == true) {
+    print('✅ [Login] Inicio de sesión correcto, datos recibidos: ${response['data']}');
+
+    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+
+    // Guardar datos en SessionManager
+    final dataParaGuardar = {
+      'usuario_id': response['data']['usuario_id'],
+      'nombre_completo': response['data']['nombre_completo'],
+      'email': response['data']['email'],
+      'token': response['data']['token'] ?? '',
+      'isLoggedIn': true,
+    };
+
+    print('💾 [Login] Guardando sesión local: $dataParaGuardar');
+
+    await SessionManager.saveSession(dataParaGuardar);
+    await usuario.guardarUsuario(dataParaGuardar);
+
+    print('🔁 [Login] UsuarioViewModel actualizado: '
+        'id=${usuario.usuarioId}, '
+        'nombre=${usuario.nombreCompleto}, '
+        'isLoggedIn=${usuario.isLoggedIn}');
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  } else {
+    print('❌ [Login] Error al iniciar sesión: ${response['message']}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(response['message'] ?? 'Error al iniciar sesión')),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

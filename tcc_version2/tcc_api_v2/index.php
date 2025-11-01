@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // ---- Configuración global ----
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/core/helpers.php';
-require_once __DIR__ . '/core/router.php';
+require_once __DIR__ . '/core/routes.php';
 
 // ---- Definición de rutas ----
 Router::get('/', function() {

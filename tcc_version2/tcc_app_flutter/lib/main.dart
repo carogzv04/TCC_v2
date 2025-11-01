@@ -16,10 +16,34 @@ import 'views/mis_tests_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final isLogged = await SessionManager.isLoggedIn();
 
-  runApp(MyApp(isLogged: isLogged));
+  // 🔹 Crear la instancia del ViewModel
+  final usuarioViewModel = UsuarioViewModel();
+
+  // 🔹 Cargar datos del usuario guardados en SharedPreferences
+  await usuarioViewModel.cargarUsuario();
+
+  // 🔹 Consultar si hay sesión activa
+  final isLogged = usuarioViewModel.isLoggedIn;
+
+  // 🔹 Imprimir estado inicial para depuración
+  print('🚀 [main.dart] Sesión cargada al iniciar: '
+      'isLogged=$isLogged, '
+      'id=${usuarioViewModel.usuarioId}, '
+      'nombre=${usuarioViewModel.nombreCompleto}');
+
+  // 🔹 Iniciar la app con el provider ya cargado
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => usuarioViewModel),
+        ChangeNotifierProvider(create: (_) => TestViewModel()),
+      ],
+      child: MyApp(isLogged: isLogged),
+    ),
+  );
 }
+
 
 class MyApp extends StatelessWidget {
   final bool isLogged;
