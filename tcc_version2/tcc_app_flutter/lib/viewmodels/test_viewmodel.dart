@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
+import '../services/api_service.dart';
 
 class TestViewModel extends ChangeNotifier {
   // Lista de preguntas (cada una con sus opciones)
   List<Map<String, dynamic>> preguntas = [];
 
+  // Lista de tests ya realizados por el usuario
+  List<Map<String, dynamic>> testsRealizados = [];
+
   // Respuestas seleccionadas: {id_pregunta: codigo_op}
   Map<int, String> respuestasSeleccionadas = {};
 
-
+  // ===== Cargar preguntas desde API =====
   Future<void> cargarPreguntasDesdeApi(List<dynamic> data) async {
     print('🧠 Cargando preguntas desde API...');
     preguntas = [];
@@ -32,30 +36,41 @@ class TestViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ===== Cargar tests realizados =====
+  Future<void> cargarTestsRealizados(int usuarioId) async {
+    try {
+      final api = ApiService();
+      // fetchMisTests devuelve directamente una lista de tests
+      final lista = await api.fetchMisTests(usuarioId);
 
+      testsRealizados = List<Map<String, dynamic>>.from(lista);
+      print('📊 Tests realizados cargados: ${testsRealizados.length}');
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error al cargar tests realizados: $e');
+      testsRealizados = [];
+      notifyListeners();
+    }
+  }
 
+  // ===== Seleccionar respuesta =====
   void seleccionarRespuesta(int idPregunta, String codigoOpcion) {
     respuestasSeleccionadas[idPregunta] = codigoOpcion;
     notifyListeners();
   }
 
+  // ===== Limpiar respuestas =====
   void limpiarRespuestas() {
     respuestasSeleccionadas.clear();
     notifyListeners();
   }
 
-  // ===== OBTENER TOTAL DE PREGUNTAS =====
-  int totalPreguntas() {
-    return preguntas.length;
-  }
+  // ===== Obtener total de preguntas =====
+  int totalPreguntas() => preguntas.length;
 
-  // ===== OBTENER TOTAL DE RESPUESTAS =====
-  int totalRespondidas() {
-    return respuestasSeleccionadas.length;
-  }
+  // ===== Obtener total de respuestas =====
+  int totalRespondidas() => respuestasSeleccionadas.length;
 
-  // ===== VERIFICAR SI EL TEST ESTÁ COMPLETO =====
-  bool testCompleto() {
-    return respuestasSeleccionadas.length == preguntas.length;
-  }
+  // ===== Verificar si el test está completo =====
+  bool testCompleto() => respuestasSeleccionadas.length == preguntas.length;
 }

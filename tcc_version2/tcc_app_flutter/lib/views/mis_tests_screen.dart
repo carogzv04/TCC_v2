@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tcc_app_flutter/views/detalle_test_screen.dart';
 import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
@@ -12,7 +13,7 @@ class MisTestsScreen extends StatefulWidget {
 
 class _MisTestsScreenState extends State<MisTestsScreen> {
   bool _isLoading = true;
-  List<dynamic> _tests = [];
+  List<Map<String, dynamic>> _tests = [];
 
   @override
   void initState() {
@@ -21,25 +22,23 @@ class _MisTestsScreenState extends State<MisTestsScreen> {
   }
 
   Future<void> _cargarTests() async {
-    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-    try {
-      // Llamada al backend: reemplazar por el endpoint real cuando esté listo
-      final response = await ApiService()
-          .fetchPerfil(usuario.usuarioId ?? 0); // TEMPORAL — simula carga
+  final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
 
-      // Supongamos que en el futuro habrá un endpoint /tests/mis-tests?usuario_id=ID
-      if (response['success'] == true && response['data'] != null) {
-        setState(() {
-          _tests = response['data']['tests_realizados'] ?? [];
-          _isLoading = false;
-        });
-      } else {
-        setState(() => _isLoading = false);
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-    }
+  try {
+    final tests = await ApiService().fetchMisTests(usuario.usuarioId ?? 0);
+    debugPrint('📥 Lista mis-tests (len=${tests.length}): $tests');
+
+    setState(() {
+      _tests = tests;       // ya es la lista final
+      _isLoading = false;
+    });
+  } catch (e) {
+    debugPrint('❌ Error cargando tests: $e');
+    setState(() => _isLoading = false);
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -52,64 +51,85 @@ class _MisTestsScreenState extends State<MisTestsScreen> {
       ),
       body: _isLoading
           ? const Center(
-        child: CircularProgressIndicator(color: Colors.deepPurple),
-      )
+              child: CircularProgressIndicator(color: Colors.deepPurple),
+            )
           : _tests.isEmpty
-          ? const Center(
-        child: Text(
-          'No tienes tests realizados aún.',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.black54,
-          ),
-        ),
-      )
-          : ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _tests.length,
-        itemBuilder: (context, index) {
-          final test = _tests[index];
-          return Card(
-            elevation: 3,
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              leading: const Icon(Icons.assessment,
-                  color: Colors.deepPurple, size: 36),
-              title: Text(
-                test['nombre_test'] ?? 'Test sin nombre',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+              ? const Center(
+                  child: Text(
+                    'No tienes tests realizados aún.',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: _tests.length,
+                  itemBuilder: (context, index) {
+                  final Map<String, dynamic> test = _tests[index];
+
+                  return Card(
+                    elevation: 3,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: const Icon(
+                        Icons.assessment,
+                        color: Colors.deepPurple,
+                        size: 36,
+                      ),
+                      title: Text(
+                        test['nombre_test']?.toString() ?? 'Test sin nombre',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(
+                            'Fecha: ${test['fecha']?.toString() ?? 'Desconocida'}',
+                            style: const TextStyle(color: Colors.black87),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Resultado: ${test['resultado']?.toString().isNotEmpty == true ? test['resultado'] : 'Pendiente'}',
+                            style: const TextStyle(color: Colors.black87),
+                          ),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios, color: Colors.deepPurple),
+                        onPressed: () {
+                          // Robusto para número o string y evita nulls
+                          final int idRpu =
+                              (test['id_rpu'] as num?)?.toInt() ??
+                              int.tryParse('${test['id_rpu']}') ??
+                              0;
+
+                          if (idRpu > 0) {
+                            debugPrint('🟢 Abriendo detalle del test ID $idRpu');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => DetalleTestScreen(idRpu: idRpu),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('ID del test inválido.')),
+                            );
+                            debugPrint('⚠️ ID del test no válido: ${test['id_rpu']} | test=$test');
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
                 ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(
-                    'Fecha: ${test['fecha'] ?? 'Desconocida'}',
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Resultado: ${test['resultado'] ?? 'Pendiente'}',
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                ],
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios,
-                  color: Colors.deepPurple),
-              onTap: () {
-                // Aquí podrías abrir una pantalla de detalle del test
-              },
-            ),
-          );
-        },
-      ),
     );
   }
 }

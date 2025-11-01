@@ -82,4 +82,41 @@ class ApiService {
       body: jsonEncode(body),
     ));
   }
+
+ 
+Future<List<Map<String, dynamic>>> fetchMisTests(int usuarioId) async {
+  final url = Uri.parse('$baseUrl/tests/mis-tests?usuario_id=$usuarioId');
+  final response = await http.get(url);
+
+  if (response.statusCode == 200) {
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic> &&
+        decoded['success'] == true &&
+        decoded['data'] != null) {
+      // devolvemos directamente la lista de tests
+      return List<Map<String, dynamic>>.from(decoded['data']);
+    }
+  }
+  return [];
+}
+
+
+Future<Map<String, dynamic>> fetchDetalleTest(int idRpu) async {
+    final url = Uri.parse('$baseUrl/tests/detalle?id_rpu=$idRpu');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Aseguramos que siempre devuelva un Map, aunque el backend devuelva lista o error
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      } else {
+        return {'success': false, 'message': 'Formato inesperado de respuesta', 'data': []};
+      }
+    } else {
+      return {'success': false, 'message': 'Error ${response.statusCode}', 'data': []};
+    }
+  }
+
 }
