@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8080/tcc_api_v2';
@@ -58,14 +59,38 @@ class ApiService {
     ));
   }
 
-  // ===== MODIFICAR PERFIL =====
-  Future<Map<String, dynamic>> modificarPerfil(Map<String, dynamic> body) async {
-    return _safeRequest(() => http.post(
-      Uri.parse('$baseUrl/usuario/modificar'),
-      headers: headers,
+ Future<Map<String, dynamic>> modificarPerfil(Map<String, dynamic> body) async {
+  final url = Uri.parse('$baseUrl/usuario/modificar'); // ajustá el endpoint si difiere
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
-    ));
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Sin mensaje',
+        'data': data['data'] ?? {},
+      };
+    } else {
+      return {
+        'success': false,
+        'message': 'Error ${response.statusCode}: ${response.reasonPhrase}',
+        'data': null,
+      };
+    }
+  } catch (e) {
+    debugPrint('❌ Error en modificarPerfil(): $e');
+    return {
+      'success': false,
+      'message': 'Error de conexión al servidor',
+      'data': null,
+    };
   }
+}
 
   // ===== TEST POR EDAD =====
   Future<Map<String, dynamic>> fetchTestPorEdad(int usuarioId) async {

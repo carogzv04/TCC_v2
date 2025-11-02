@@ -16,45 +16,46 @@ class UsuarioViewModel extends ChangeNotifier {
   String? fotoPerfil;           // url/base64 opcional
   String? fechaRegistro;        // timestamp opcional
 
+  // =====================================================
+  // CARGAR / GUARDAR SESIÓN
+  // =====================================================
+
   Future<void> cargarUsuario() async {
     final session = await SessionManager.getSession();
     if (session != null) {
-      usuarioId        = session['usuario_id'];
-      nombreCompleto   = session['nombre_completo'];
-      email            = session['email'];
-      token            = session['token'];
-      isLoggedIn       = session['isLoggedIn'] ?? false;
+      usuarioId = session['usuario_id'] ?? session['id_usuarios'];
+      nombreCompleto    = session['nombre_completo'];
+      email             = session['email'];
+      token             = session['token'];
+      isLoggedIn        = session['isLoggedIn'] ?? false;
 
       // opcionales si existen en sesión
-      fechaNacimiento  = session['fecha_nacimiento'];
-      sexo             = session['sexo'];
-      diagnosticoPrevio= session['diagnostico_previo'];
-      fotoPerfil       = session['foto_perfil'];
-      fechaRegistro    = session['fecha_registro'];
-
-      notifyListeners();
+      fechaNacimiento   = session['fecha_nacimiento'];
+      sexo              = session['sexo'];
+      diagnosticoPrevio = session['diagnostico_previo'];
+      fotoPerfil        = session['foto_perfil'];
+      fechaRegistro     = session['fecha_registro'];
     } else {
       isLoggedIn = false;
-      notifyListeners();
     }
+    notifyListeners();
   }
 
-  // Guarda todo lo que venga (por ejemplo, /auth/login o /usuario/perfil)
   Future<void> guardarUsuario(Map<String, dynamic> data) async {
     await SessionManager.saveSession(data);
 
-    usuarioId        = data['usuario_id'];
-    nombreCompleto   = data['nombre_completo'];
-    email            = data['email'];
-    token            = data['token'];
-    isLoggedIn       = true;
+    usuarioId = data['usuario_id'] ?? data['id_usuarios'];
+    nombreCompleto    = data['nombre_completo'];
+    email             = data['email'];
+    token             = data['token'];
+    isLoggedIn        = true;
 
     // opcionales
-    fechaNacimiento  = data['fecha_nacimiento'];
-    sexo             = data['sexo'];
-    diagnosticoPrevio= data['diagnostico_previo'];
-    fotoPerfil       = data['foto_perfil'];
-    fechaRegistro    = data['fecha_registro'];
+    fechaNacimiento   = data['fecha_nacimiento'];
+    sexo              = data['sexo'];
+    diagnosticoPrevio = data['diagnostico_previo'];
+    fotoPerfil        = data['foto_perfil'];
+    fechaRegistro     = data['fecha_registro'];
 
     notifyListeners();
   }
@@ -80,26 +81,48 @@ class UsuarioViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> actualizarPerfil() async {
-  if (usuarioId == null) return;
+  // =====================================================
+  // 🔄 ACTUALIZAR PERFIL DESDE EL BACKEND
+  // =====================================================
 
-  try {
-    final response = await ApiService().fetchPerfil(usuarioId!);
-    if (response['success'] == true && response['data'] != null) {
-      final data = response['data'];
+  Future<void> actualizarPerfilDesdeBackend() async {
+    if (usuarioId == null) return;
 
-      // Actualiza los valores locales con los datos del backend
-      nombreCompleto = data['nombre_completo'];
-      email = data['email'];
-      fechaNacimiento = data['fecha_nacimiento'];
-      sexo = data['sexo'];
-      diagnosticoPrevio = data['diagnostico_previo'];
+    try {
+      final response = await ApiService().fetchPerfil(usuarioId!);
 
-      notifyListeners();
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'];
+
+        // Actualiza los valores locales con los datos del backend
+        nombreCompleto    = data['nombre_completo'];
+        email             = data['email'];
+        fechaNacimiento   = data['fecha_nacimiento'];
+        sexo              = data['sexo'];
+        diagnosticoPrevio = data['diagnostico_previo'];
+        fotoPerfil        = data['foto_perfil'];
+        fechaRegistro     = data['fecha_registro'];
+
+        // Guarda también la nueva sesión
+        await SessionManager.saveSession({
+          'usuario_id': usuarioId,
+          'nombre_completo': nombreCompleto,
+          'email': email,
+          'fecha_nacimiento': fechaNacimiento,
+          'sexo': sexo,
+          'diagnostico_previo': diagnosticoPrevio,
+          'foto_perfil': fotoPerfil,
+          'fecha_registro': fechaRegistro,
+          'isLoggedIn': true
+        });
+
+        notifyListeners();
+        debugPrint('✅ Perfil actualizado desde backend correctamente');
+      } else {
+        debugPrint('⚠️ No se pudo actualizar perfil: ${response['message']}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error al actualizar perfil desde backend: $e');
     }
-  } catch (e) {
-    debugPrint('⚠️ Error al actualizar perfil: $e');
   }
-}
-
 }

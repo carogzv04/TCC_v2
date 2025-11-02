@@ -11,7 +11,7 @@ class PerfilScreen extends StatelessWidget {
     
     final usuario = Provider.of<UsuarioViewModel>(context);
     if (usuario.isLoggedIn && usuario.usuarioId != null) {
-    usuario.actualizarPerfil();
+    usuario.actualizarPerfilDesdeBackend();
   }
 
   print('👤 [PerfilScreen] Estado actual del usuario: '

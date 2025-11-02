@@ -181,3 +181,61 @@ Router::get('/tests/mis-tests', function () {
         json_response(false, 'Error al obtener tests: ' . $e->getMessage(), null, 500);
     }
 });
+
+// --- POST /usuario/modificar ---
+Router::post('/usuario/modificar', function() {
+    $body = json_decode(file_get_contents('php://input'), true);
+
+    if (
+        empty($body['usuario_id']) ||
+        empty($body['nombre_completo']) ||
+        empty($body['email'])
+    ) {
+        json_response(false, 'Faltan campos requeridos', null, 400);
+    }
+
+    $id     = (int)$body['usuario_id'];
+    $nombre = trim($body['nombre_completo']);
+    $email  = trim($body['email']);
+    $fecha  = !empty($body['fecha_nacimiento']) ? trim($body['fecha_nacimiento']) : null;
+    $sexo   = !empty($body['sexo']) ? trim($body['sexo']) : null;
+    $diag   = !empty($body['diagnostico_previo']) ? trim($body['diagnostico_previo']) : null;
+
+    try {
+        $pdo = get_pdo();
+
+        $sql = "UPDATE usuarios 
+                SET nombre_completo = ?, 
+                    email = ?, 
+                    fecha_nacimiento = ?, 
+                    sexo = ?, 
+                    diagnostico_previo = ?
+                WHERE id_usuarios = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$nombre, $email, $fecha, $sexo, $diag, $id]);
+
+        // Obtener los nuevos datos actualizados
+        $select = $pdo->prepare("SELECT id_usuarios, nombre_completo, email, fecha_nacimiento, sexo, diagnostico_previo 
+                                 FROM usuarios WHERE id_usuarios = ?");
+        $select->execute([$id]);
+        $usuario = $select->fetch(PDO::FETCH_ASSOC);
+
+        if (!$usuario) {
+            json_response(false, 'Usuario no encontrado', null, 404);
+        }
+
+
+        json_response(true, 'Perfil actualizado correctamente', [
+    'usuario_id' => $usuario['id_usuarios'],
+    'nombre_completo' => $usuario['nombre_completo'],
+    'email' => $usuario['email'],
+    'fecha_nacimiento' => $usuario['fecha_nacimiento'],
+    'sexo' => $usuario['sexo'],
+    'diagnostico_previo' => $usuario['diagnostico_previo']
+], 200);
+
+
+    } catch (Throwable $e) {
+        json_response(false, 'Error al actualizar perfil: ' . $e->getMessage(), null, 500);
+    }
+});
