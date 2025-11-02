@@ -182,6 +182,50 @@ Router::get('/tests/mis-tests', function () {
     }
 });
 
+// --- GET /usuario/perfil ---
+Router::get('/usuario/perfil', function() {
+    $usuario_id = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null;
+    $email      = isset($_GET['email']) ? trim($_GET['email']) : null;
+
+    if (!$usuario_id && !$email) {
+        json_response(false, 'Debe enviar usuario_id o email', null, 400);
+    }
+
+    try {
+        $pdo = get_pdo();
+
+        if ($usuario_id) {
+            $stmt = $pdo->prepare('SELECT id_usuarios, nombre_completo, fecha_nacimiento, email, sexo, foto_perfil, fecha_registro, diagnostico_previo 
+                                   FROM usuarios WHERE id_usuarios = ? LIMIT 1');
+            $stmt->execute([$usuario_id]);
+        } else {
+            $stmt = $pdo->prepare('SELECT id_usuarios, nombre_completo, fecha_nacimiento, email, sexo, foto_perfil, fecha_registro, diagnostico_previo 
+                                   FROM usuarios WHERE email = ? LIMIT 1');
+            $stmt->execute([$email]);
+        }
+
+        $u = $stmt->fetch();
+        if (!$u) {
+            json_response(false, 'Usuario no encontrado', null, 404);
+        }
+
+        // Devolvé con claves consistentes
+        json_response(true, 'Perfil obtenido correctamente', [
+            'usuario_id'         => (int)$u['id_usuarios'],
+            'nombre_completo'    => $u['nombre_completo'],
+            'fecha_nacimiento'   => $u['fecha_nacimiento'],
+            'email'              => $u['email'],
+            'sexo'               => $u['sexo'],
+            'foto_perfil'        => $u['foto_perfil'],
+            'fecha_registro'     => $u['fecha_registro'],
+            'diagnostico_previo' => $u['diagnostico_previo'],
+        ]);
+    } catch (Throwable $e) {
+        json_response(false, 'Error al obtener perfil: ' . $e->getMessage(), null, 500);
+    }
+});
+
+
 // --- POST /usuario/modificar ---
 Router::post('/usuario/modificar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
