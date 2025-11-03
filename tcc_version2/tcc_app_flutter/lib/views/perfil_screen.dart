@@ -67,23 +67,33 @@ class PerfilScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
 
-                    // ===== Datos adicionales (placeholders) =====
+                    // ===== Datos adicionales (reales) =====
                     _buildInfoTile(
                       icon: Icons.cake,
                       label: 'Fecha de nacimiento',
-                      value: 'No especificada',
+                      value: usuario.fechaNacimiento?.isNotEmpty == true
+                          ? usuario.fechaNacimiento!
+                          : 'No especificada',
                     ),
                     _buildInfoTile(
                       icon: Icons.wc,
                       label: 'Sexo',
-                      value: 'No especificado',
+                      value: usuario.sexo?.isNotEmpty == true
+                          ? (usuario.sexo == 'M'
+                              ? 'Masculino'
+                              : usuario.sexo == 'F'
+                                  ? 'Femenino'
+                                  : 'Otro')
+                          : 'No especificado',
                     ),
                     _buildInfoTile(
                       icon: Icons.medical_information,
                       label: 'Diagnóstico previo',
-                      value: 'No registrado',
+                      value: usuario.diagnosticoPrevio?.isNotEmpty == true
+                          ? usuario.diagnosticoPrevio!
+                          : 'No registrado',
                     ),
-                    const SizedBox(height: 30),
+
 
                     // ===== Botón para editar =====
                     ElevatedButton.icon(
