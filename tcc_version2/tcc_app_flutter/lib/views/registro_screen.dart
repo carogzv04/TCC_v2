@@ -20,7 +20,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _api = ApiService();
 
-  // lista de trastornos comunes
   final List<String> _diagnosticos = [
     'No',
     'TDAH (Trastorno por Déficit de Atención e Hiperactividad)',
@@ -50,17 +49,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (response['success'] == true) {
       _mostrarSnack('Registro exitoso. Ahora podés iniciar sesión.');
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
     } else {
       _mostrarSnack(response['message'] ?? 'Error al registrar usuario.');
     }
   }
 
   void _mostrarSnack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -86,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (seleccion != null) {
       _fechaCtrl.text =
-          '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
+      '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
     }
   }
 
@@ -95,6 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true, // ✅ se ajusta al teclado
       backgroundColor: const Color(0xFFD5F5DC),
       appBar: AppBar(
         backgroundColor: const Color(0xFFD5F5DC),
@@ -102,118 +99,139 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: const Text('Registro de usuario'),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nombreCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre completo',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Correo electrónico',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Ingresá tu email';
-                  if (!v.contains('@')) return 'Email inválido';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: _passCtrl,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Contraseña',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Ingresá una contraseña';
-                  if (v.length < 6) return 'Debe tener al menos 6 caracteres';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: _fechaCtrl,
-                readOnly: true,
-                decoration: InputDecoration(
-                  labelText: 'Fecha de nacimiento',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: _seleccionarFecha,
-                  ),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<String>(
-                value: _sexoSeleccionado,
-                decoration: const InputDecoration(
-                  labelText: 'Sexo',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'Femenino', child: Text('Femenino')),
-                  DropdownMenuItem(value: 'Masculino', child: Text('Masculino')),
-                  DropdownMenuItem(value: 'Otro', child: Text('Otro')),
-                ],
-                onChanged: (value) => setState(() => _sexoSeleccionado = value),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
-              ),
-              const SizedBox(height: 15),
-              DropdownButtonFormField<String>(
-                value: _diagnosticoSeleccionado,
-                decoration: const InputDecoration(
-                  labelText: 'Diagnóstico previo',
-                  border: OutlineInputBorder(),
-                ),
-                items: _diagnosticos
-                    .map((d) => DropdownMenuItem(
-                          value: d,
-                          child: Text(d),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => _diagnosticoSeleccionado = value),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Seleccioná una opción' : null,
-              ),
-              const SizedBox(height: 25),
-              _loading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _registrar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
-                      ),
-                      child: const Text('Registrarse'),
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(), // 👈 cierra teclado al tocar fuera
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // ===== CAMPOS =====
+                  TextFormField(
+                    controller: _nombreCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre completo',
+                      border: OutlineInputBorder(),
                     ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                child: const Text('¿Ya tenés cuenta? Iniciá sesión'),
+                    validator: (v) =>
+                    v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
+                  ),
+                  const SizedBox(height: 15),
+
+                  TextFormField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo electrónico',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Ingresá tu email';
+                      if (!v.contains('@')) return 'Email inválido';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  TextFormField(
+                    controller: _passCtrl,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Contraseña',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Ingresá una contraseña';
+                      if (v.length < 6) return 'Debe tener al menos 6 caracteres';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  TextFormField(
+                    controller: _fechaCtrl,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Fecha de nacimiento',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: _seleccionarFecha,
+                      ),
+                    ),
+                    validator: (v) =>
+                    v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
+                  ),
+                  const SizedBox(height: 15),
+
+                  DropdownButtonFormField<String>(
+                    value: _sexoSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: 'Sexo',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Femenino', child: Text('Femenino')),
+                      DropdownMenuItem(value: 'Masculino', child: Text('Masculino')),
+                      DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _sexoSeleccionado = value),
+                    validator: (v) =>
+                    v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
+                  ),
+                  const SizedBox(height: 15),
+
+                  DropdownButtonFormField<String>(
+                    value: _diagnosticoSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: 'Diagnóstico previo',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _diagnosticos
+                        .map((d) =>
+                        DropdownMenuItem(value: d, child: Text(d)))
+                        .toList(),
+                    onChanged: (value) =>
+                        setState(() => _diagnosticoSeleccionado = value),
+                    validator: (v) => v == null || v.isEmpty
+                        ? 'Seleccioná una opción'
+                        : null,
+                  ),
+                  const SizedBox(height: 30),
+
+                  // ===== BOTÓN =====
+                  _loading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                    onPressed: _registrar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Registrarse'),
+                  ),
+                  const SizedBox(height: 15),
+
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: const Text(
+                      '¿Ya tenés cuenta? Iniciá sesión',
+                      style: TextStyle(color: Colors.deepPurple),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
