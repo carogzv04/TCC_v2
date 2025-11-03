@@ -15,9 +15,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passCtrl = TextEditingController();
   final _fechaCtrl = TextEditingController();
   String? _sexoSeleccionado;
+  String? _diagnosticoSeleccionado;
   bool _loading = false;
 
   final _api = ApiService();
+
+  // lista de trastornos comunes
+  final List<String> _diagnosticos = [
+    'No',
+    'TDAH (Trastorno por Déficit de Atención e Hiperactividad)',
+    'TDA (Trastorno por Déficit de Atención)',
+    'TEA (Trastorno del Espectro Autista)',
+    'Dislexia',
+    'Discalculia',
+    'Disgrafía',
+    'Otro',
+  ];
 
   Future<void> _registrar() async {
     if (!_formKey.currentState!.validate()) return;
@@ -30,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'password': _passCtrl.text.trim(),
       'fecha_nacimiento': _fechaCtrl.text.trim(),
       'sexo': _sexoSeleccionado ?? 'No especificado',
+      'diagnostico_previo': _diagnosticoSeleccionado ?? 'No',
     });
 
     setState(() => _loading = false);
@@ -58,7 +72,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // ✅ Selector de fecha de nacimiento con formato yyyy-mm-dd
   Future<void> _seleccionarFecha() async {
     final hoy = DateTime.now();
     final inicial = DateTime(hoy.year - 18, hoy.month, hoy.day);
@@ -73,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (seleccion != null) {
       _fechaCtrl.text =
-      '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
+          '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
     }
   }
 
@@ -102,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) =>
-                v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
+                    v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
               ),
               const SizedBox(height: 15),
               TextFormField(
@@ -145,7 +158,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 validator: (v) =>
-                v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
+                    v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
               ),
               const SizedBox(height: 15),
               DropdownButtonFormField<String>(
@@ -161,20 +174,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 onChanged: (value) => setState(() => _sexoSeleccionado = value),
                 validator: (v) =>
-                v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
+                    v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
+              ),
+              const SizedBox(height: 15),
+              DropdownButtonFormField<String>(
+                value: _diagnosticoSeleccionado,
+                decoration: const InputDecoration(
+                  labelText: 'Diagnóstico previo',
+                  border: OutlineInputBorder(),
+                ),
+                items: _diagnosticos
+                    .map((d) => DropdownMenuItem(
+                          value: d,
+                          child: Text(d),
+                        ))
+                    .toList(),
+                onChanged: (value) =>
+                    setState(() => _diagnosticoSeleccionado = value),
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Seleccioná una opción' : null,
               ),
               const SizedBox(height: 25),
               _loading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                onPressed: _registrar,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 48),
-                ),
-                child: const Text('Registrarse'),
-              ),
+                      onPressed: _registrar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 48),
+                      ),
+                      child: const Text('Registrarse'),
+                    ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () {
