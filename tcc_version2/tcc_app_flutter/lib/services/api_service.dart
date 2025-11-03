@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.8.8/tcc_api_v2';
+  static const String baseUrl = 'http://186.208.144.167:8080/tcc_api_v2/';
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
   };
