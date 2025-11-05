@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'recomendaciones_screen.dart'; // 🔹 Importamos la nueva pantalla
 
 class ResultadoTestScreen extends StatelessWidget {
   final double porcentajeA;
@@ -26,82 +27,138 @@ class ResultadoTestScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final orientation = MediaQuery.of(context).orientation;
+
+    final chartSize = orientation == Orientation.portrait
+        ? size.width * 0.65
+        : size.height * 0.45;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFD5F5DC),
+      backgroundColor: const Color(0xFFF6F7D7),
       appBar: AppBar(
         title: const Text('Resultado del Test'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF3EC1D3),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Porcentaje por Estilo de Aprendizaje',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Porcentaje por Estilo de Aprendizaje',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF3EC1D3),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
 
-            // === Gráfico Circular ===
-            SizedBox(
-              height: 250,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 4,
-                  centerSpaceRadius: 40,
-                  sections: [
-                    PieChartSectionData(
-                      color: Colors.deepPurple,
-                      value: porcentajeA,
-                      title: 'A: ${porcentajeA.toStringAsFixed(1)}%',
-                      titleStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+              SizedBox(
+                height: chartSize,
+                width: chartSize,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: chartSize * 0.25,
+                    startDegreeOffset: -90,
+                    sections: [
+                      PieChartSectionData(
+                        color: const Color(0xFF3EC1D3),
+                        value: porcentajeA,
+                        title: 'A: ${porcentajeA.toStringAsFixed(1)}%',
+                        radius: chartSize * 0.35,
+                        titleStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    PieChartSectionData(
-                      color: Colors.green,
-                      value: porcentajeB,
-                      title: 'B: ${porcentajeB.toStringAsFixed(1)}%',
-                      titleStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      PieChartSectionData(
+                        color: const Color(0xFFFF9A00),
+                        value: porcentajeB,
+                        title: 'B: ${porcentajeB.toStringAsFixed(1)}%',
+                        radius: chartSize * 0.35,
+                        titleStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  swapAnimationDuration: const Duration(milliseconds: 900),
+                  swapAnimationCurve: Curves.easeOutCubic,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 40),
+              const SizedBox(height: 40),
 
-            // === Resultado textual ===
-            Text(
-              _getEstiloDescripcion(estiloId),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+              Text(
+                _getEstiloDescripcion(estiloId),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 30),
 
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(180, 48),
+              // === Botón "Ver recomendaciones" ===
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RecomendacionesScreen(estiloId: estiloId),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF9A00), // naranja
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(220, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 5,
+                ),
+                icon: const Icon(Icons.lightbulb),
+                label: const Text(
+                  'Ver recomendaciones',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Volver al inicio'),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+
+              // === Botón "Volver al inicio" ===
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3EC1D3),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(200, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 6,
+                ),
+                icon: const Icon(Icons.home),
+                label: const Text(
+                  'Volver al inicio',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

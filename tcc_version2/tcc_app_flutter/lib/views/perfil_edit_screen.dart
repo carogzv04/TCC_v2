@@ -15,9 +15,20 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _fechaNacimientoController = TextEditingController();
-  final TextEditingController _diagnosticoController = TextEditingController();
   String? _sexoSeleccionado;
+  String? _diagnosticoSeleccionado;
   bool _isLoading = false;
+
+  final List<String> _diagnosticos = [
+    'No',
+    'TDAH (Trastorno por Déficit de Atención e Hiperactividad)',
+    'TDA (Trastorno por Déficit de Atención)',
+    'TEA (Trastorno del Espectro Autista)',
+    'Dislexia',
+    'Discalculia',
+    'Disgrafía',
+    'Otro',
+  ];
 
   @override
   void initState() {
@@ -31,8 +42,10 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
     _emailController.text = usuario.email ?? '';
     _fechaNacimientoController.text = usuario.fechaNacimiento ?? '';
     _sexoSeleccionado = usuario.sexo ?? '';
-    _diagnosticoController.text = usuario.diagnosticoPrevio ?? '';
-  }
+    _diagnosticoSeleccionado = usuario.diagnosticoPrevio ?? '';
+    final diag = usuario.diagnosticoPrevio ?? '';
+    _diagnosticoSeleccionado = _diagnosticos.contains(diag) ? diag : 'No';
+}
 
   Future<void> _actualizarPerfil() async {
     if (!_formKey.currentState!.validate()) return;
@@ -46,22 +59,21 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
       'email': _emailController.text.trim(),
       'fecha_nacimiento': _fechaNacimientoController.text.trim(),
       'sexo': _sexoSeleccionado ?? '',
-      'diagnostico_previo': _diagnosticoController.text.trim(),
+      'diagnostico_previo': _diagnosticoSeleccionado ?? '',
     };
 
     final response = await ApiService().modificarPerfil(body);
     setState(() => _isLoading = false);
 
     if (response['success'] == true && response['data'] != null) {
-      // ✅ Actualizamos el ViewModel con los datos del backend
       final data = response['data'];
       usuario.nombreCompleto = data['nombre_completo'] ?? _nombreController.text.trim();
       usuario.email = data['email'] ?? _emailController.text.trim();
       usuario.fechaNacimiento = data['fecha_nacimiento'] ?? _fechaNacimientoController.text.trim();
       usuario.sexo = data['sexo'] ?? _sexoSeleccionado ?? '';
-      usuario.diagnosticoPrevio = data['diagnostico_previo'] ?? _diagnosticoController.text.trim();
+      usuario.diagnosticoPrevio = data['diagnostico_previo'] ?? _diagnosticoSeleccionado ?? '';
 
-      await usuario.guardarUsuario(data); // actualiza SharedPreferences también
+      await usuario.guardarUsuario(data);
       usuario.notifyListeners();
 
       if (!mounted) return;
@@ -81,9 +93,9 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD5F5DC),
+      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
         title: const Text('Editar Perfil'),
         foregroundColor: Colors.white,
       ),
@@ -101,17 +113,17 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
+                    color: Color(0xFF3EC1D3), // ✅ título azul
                   ),
                 ),
                 const SizedBox(height: 30),
 
-                // Campo nombre completo
+                // ===== Nombre =====
                 TextFormField(
                   controller: _nombreController,
                   decoration: const InputDecoration(
                     labelText: 'Nombre completo',
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(Icons.person, color: Color(0xFF3EC1D3)),
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) =>
@@ -119,13 +131,13 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Campo correo
+                // ===== Email =====
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email),
+                    prefixIcon: Icon(Icons.email, color: Color(0xFF3EC1D3)),
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) {
@@ -136,13 +148,13 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Campo fecha nacimiento
+                // ===== Fecha nacimiento =====
                 TextFormField(
                   controller: _fechaNacimientoController,
                   readOnly: true,
                   decoration: const InputDecoration(
                     labelText: 'Fecha de nacimiento',
-                    prefixIcon: Icon(Icons.calendar_today),
+                    prefixIcon: Icon(Icons.calendar_today, color: Color(0xFF3EC1D3)),
                     border: OutlineInputBorder(),
                   ),
                   onTap: () async {
@@ -162,11 +174,11 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Campo sexo
+                // ===== Sexo =====
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
                     labelText: 'Sexo',
-                    prefixIcon: Icon(Icons.wc),
+                    prefixIcon: Icon(Icons.wc, color: Color(0xFF3EC1D3)),
                     border: OutlineInputBorder(),
                   ),
                   value: _sexoSeleccionado?.isNotEmpty == true ? _sexoSeleccionado : null,
@@ -179,25 +191,46 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Campo diagnóstico previo
-                TextFormField(
-                  controller: _diagnosticoController,
+                // ===== Diagnóstico previo =====
+                DropdownButtonFormField<String>(
+                  value: _diagnosticoSeleccionado,
+                  isExpanded: true, // ✅ evita overflow
                   decoration: const InputDecoration(
                     labelText: 'Diagnóstico previo',
-                    prefixIcon: Icon(Icons.local_hospital),
+                    prefixIcon:
+                        Icon(Icons.local_hospital, color: Color(0xFF3EC1D3)),
                     border: OutlineInputBorder(),
                   ),
+                  items: _diagnosticos.map((d) {
+                    return DropdownMenuItem(
+                      value: d,
+                      child: Text(
+                        d,
+                        overflow: TextOverflow.ellipsis, // ✅ corta con “...”
+                        maxLines: 1,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) =>
+                      setState(() => _diagnosticoSeleccionado = value),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Seleccioná una opción' : null,
                 ),
                 const SizedBox(height: 30),
 
-                // Botones
+                // ===== Botón Guardar cambios =====
                 ElevatedButton(
                   onPressed: _isLoading ? null : _actualizarPerfil,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: const Color(0xFF3EC1D3),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     textStyle: const TextStyle(fontSize: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 4,
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -211,12 +244,17 @@ class _PerfilEditScreenState extends State<PerfilEditScreen> {
                       : const Text('Guardar cambios'),
                 ),
                 const SizedBox(height: 10),
+
+                // ===== Botón Cancelar =====
                 OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.deepPurple,
-                    side: const BorderSide(color: Colors.deepPurple),
+                    foregroundColor: const Color(0xFF3EC1D3),
+                    side: const BorderSide(color: Color(0xFF3EC1D3)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   child: const Text('Cancelar'),
                 ),

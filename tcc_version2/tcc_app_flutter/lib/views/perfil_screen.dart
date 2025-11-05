@@ -22,12 +22,14 @@ class PerfilScreen extends StatelessWidget {
       'nombre=${usuario.nombreCompleto}, '
       'email=${usuario.email}');
       
-    return Scaffold(
-      backgroundColor: const Color(0xFFD5F5DC),
+    
+  return Scaffold(
+      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
         title: const Text('Mi Perfil'),
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: usuario.isLoggedIn
           ? Center(
@@ -40,8 +42,9 @@ class PerfilScreen extends StatelessWidget {
                     // ===== Avatar =====
                     const CircleAvatar(
                       radius: 60,
-                      backgroundColor: Colors.deepPurple,
-                      child: Icon(Icons.person, size: 70, color: Colors.white),
+                      backgroundColor: Color(0xFF3EC1D3), // ✅ azul principal
+                      child:
+                          Icon(Icons.person, size: 70, color: Colors.white),
                     ),
                     const SizedBox(height: 20),
 
@@ -51,7 +54,7 @@ class PerfilScreen extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
+                        color: Color(0xFF3EC1D3), // ✅ azul principal
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -67,7 +70,7 @@ class PerfilScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
 
-                    // ===== Datos adicionales (reales) =====
+                    // ===== Datos adicionales =====
                     _buildInfoTile(
                       icon: Icons.cake,
                       label: 'Fecha de nacimiento',
@@ -94,6 +97,7 @@ class PerfilScreen extends StatelessWidget {
                           : 'No registrado',
                     ),
 
+                    const SizedBox(height: 20),
 
                     // ===== Botón para editar =====
                     ElevatedButton.icon(
@@ -107,11 +111,15 @@ class PerfilScreen extends StatelessWidget {
                       icon: const Icon(Icons.edit),
                       label: const Text('Editar perfil'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 40, vertical: 14),
                         textStyle: const TextStyle(fontSize: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
                       ),
                     ),
                   ],
@@ -127,7 +135,7 @@ class PerfilScreen extends StatelessWidget {
     );
   }
 
-  // Widget auxiliar para mostrar los campos con ícono
+  // ===== Widget auxiliar =====
   Widget _buildInfoTile({
     required IconData icon,
     required String label,
@@ -149,7 +157,7 @@ class PerfilScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.deepPurple),
+          Icon(icon, color: const Color(0xFF3EC1D3)), // ✅ azul principal
           const SizedBox(width: 16),
           Expanded(
             child: Column(

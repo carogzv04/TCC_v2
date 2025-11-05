@@ -1,8 +1,4 @@
 <?php
-// ============================================
-//  routes/resultados.php
-//  Consultar resultados del usuario
-// ============================================
 
 require_once __DIR__ . '/../db.php';
 

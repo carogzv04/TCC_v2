@@ -92,12 +92,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true, // ✅ se ajusta al teclado
-      backgroundColor: const Color(0xFFD5F5DC),
+      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
       appBar: AppBar(
-        backgroundColor: const Color(0xFFD5F5DC),
+        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
         elevation: 0,
         title: const Text('Registro de usuario'),
         centerTitle: true,
+        foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -108,15 +109,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
               key: _formKey,
               child: Column(
                 children: [
+                  // ===== TÍTULO =====
+                  const Text(
+                    'Crear nueva cuenta',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3EC1D3), // ✅ azul principal
+                    ),
+                  ),
+                  const SizedBox(height: 25),
+
                   // ===== CAMPOS =====
                   TextFormField(
                     controller: _nombreCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Nombre completo',
+                      prefixIcon: Icon(Icons.person, color: Color(0xFF3EC1D3)),
                       border: OutlineInputBorder(),
                     ),
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
+                        v == null || v.isEmpty ? 'Ingresá tu nombre' : null,
                   ),
                   const SizedBox(height: 15),
 
@@ -125,6 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
                       labelText: 'Correo electrónico',
+                      prefixIcon: Icon(Icons.email, color: Color(0xFF3EC1D3)),
                       border: OutlineInputBorder(),
                     ),
                     validator: (v) {
@@ -140,6 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Contraseña',
+                      prefixIcon: Icon(Icons.lock, color: Color(0xFF3EC1D3)),
                       border: OutlineInputBorder(),
                     ),
                     validator: (v) {
@@ -156,13 +172,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Fecha de nacimiento',
                       border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.calendar_today,
+                          color: Color(0xFF3EC1D3)),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.calendar_today),
+                        icon: const Icon(Icons.event, color: Color(0xFF3EC1D3)),
                         onPressed: _seleccionarFecha,
                       ),
                     ),
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
+                        v == null || v.isEmpty ? 'Seleccioná una fecha' : null,
                   ),
                   const SizedBox(height: 15),
 
@@ -170,6 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     value: _sexoSeleccionado,
                     decoration: const InputDecoration(
                       labelText: 'Sexo',
+                      prefixIcon: Icon(Icons.wc, color: Color(0xFF3EC1D3)),
                       border: OutlineInputBorder(),
                     ),
                     items: const [
@@ -180,19 +199,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onChanged: (value) =>
                         setState(() => _sexoSeleccionado = value),
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
+                        v == null || v.isEmpty ? 'Seleccioná un sexo' : null,
                   ),
                   const SizedBox(height: 15),
 
                   DropdownButtonFormField<String>(
                     value: _diagnosticoSeleccionado,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Diagnóstico previo',
+                      prefixIcon:
+                          Icon(Icons.local_hospital, color: Color(0xFF3EC1D3)),
                       border: OutlineInputBorder(),
                     ),
                     items: _diagnosticos
-                        .map((d) =>
-                        DropdownMenuItem(value: d, child: Text(d)))
+                        .map((d) => DropdownMenuItem(value: d, child: Text(d,
+                        overflow: TextOverflow.ellipsis, 
+                        maxLines: 1, 
+                        style: const TextStyle(fontSize: 14))))
                         .toList(),
                     onChanged: (value) =>
                         setState(() => _diagnosticoSeleccionado = value),
@@ -202,30 +226,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 30),
 
-                  // ===== BOTÓN =====
+                
                   _loading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(
+                          color: Color(0xFF3EC1D3),
+                        )
                       : ElevatedButton(
-                    onPressed: _registrar,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Registrarse'),
-                  ),
+                          onPressed: _registrar,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3EC1D3),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 4,
+                          ),
+                          child: const Text('Registrarse'),
+                        ),
                   const SizedBox(height: 15),
 
+                  // ===== ENLACE A LOGIN =====
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/login');
                     },
                     child: const Text(
                       '¿Ya tenés cuenta? Iniciá sesión',
-                      style: TextStyle(color: Colors.deepPurple),
+                      style: TextStyle(
+                        color: Color(0xFFFF9A00), // ✅ acento naranja
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),

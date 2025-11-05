@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
+      (route) => false,
     );
   }
 
@@ -40,9 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final usuarioVM = Provider.of<UsuarioViewModel>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD5F5DC),
+      backgroundColor: Theme.of(context).colorScheme.background, 
       appBar: AppBar(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Theme.of(context).colorScheme.primary, 
         title: const Text('Inicio'),
         foregroundColor: Colors.white,
       ),
@@ -51,16 +51,23 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: Colors.deepPurple),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary, 
+              ),
               accountName: Text(usuarioVM.nombreCompleto ?? 'Usuario'),
               accountEmail: Text(usuarioVM.email ?? ''),
-              currentAccountPicture: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(Icons.person, color: Colors.deepPurple, size: 40),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.background, 
+                child: Icon(
+                  Icons.person,
+                  color: Theme.of(context).colorScheme.primary, 
+                  size: 40,
+                ),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.assignment),
+              leading: Icon(Icons.assignment,
+                  color: Theme.of(context).colorScheme.primary),
               title: const Text('Mis tests'),
               onTap: () {
                 Navigator.push(
@@ -70,7 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.person),
+              leading: Icon(Icons.person,
+                  color: Theme.of(context).colorScheme.primary),
               title: const Text('Perfil'),
               onTap: () {
                 Navigator.push(
@@ -82,7 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+              title: const Text('Cerrar sesión',
+                  style: TextStyle(color: Colors.red)),
               onTap: _cerrarSesion,
             ),
           ],
@@ -90,16 +99,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 '¡Bienvenido, ${usuarioVM.nombreCompleto ?? 'Usuario'}!',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -111,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 40),
 
+              // ====== BOTÓN PRINCIPAL ======
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -121,14 +132,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.quiz),
                 label: const Text('Realizar nuevo test'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: Theme.of(context).colorScheme.primary, // 🔴 #FF165D
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 14),
                   textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
                 ),
               ),
               const SizedBox(height: 20),
 
+              // ====== BOTÓN SECUNDARIO ======
               OutlinedButton.icon(
                 onPressed: () {
                   Navigator.push(
@@ -139,10 +156,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.history),
                 label: const Text('Ver tests realizados'),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.deepPurple, width: 2),
-                  foregroundColor: Colors.deepPurple,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                  foregroundColor:
+                      Theme.of(context).colorScheme.primary, 
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40, vertical: 14),
                   textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
