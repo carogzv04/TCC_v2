@@ -12,6 +12,8 @@ const TestScreen({super.key});
 State<TestScreen> createState() => _TestScreenState();
 }
 
+late final int idRpu;
+
 class _TestScreenState extends State<TestScreen> {
 bool _isLoading = true;
 bool _isSubmitting = false;
@@ -110,6 +112,7 @@ if (response['success'] == true) {
         porcentajeA: porcentajeA,
         porcentajeB: porcentajeB,
         estiloId: estiloId,
+        idRpu: idRpu,
       ),
     ),
   );

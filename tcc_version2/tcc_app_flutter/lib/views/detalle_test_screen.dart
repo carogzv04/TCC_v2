@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/api_service.dart';
-import 'recomendaciones_screen.dart'; // 🔹 Importamos la nueva pantalla
+import 'recomendaciones_screen.dart'; 
+import '../viewmodels/usuario_viewmodel.dart';
 
 class DetalleTestScreen extends StatefulWidget {
   final int idRpu;
@@ -126,16 +128,23 @@ class _DetalleTestScreenState extends State<DetalleTestScreen> {
 
                               // === Botón "Ver más" que lleva a recomendaciones ===
                               ElevatedButton.icon(
-                                onPressed: () {
+                              onPressed: () {
+                                // Accedemos al ViewModel actual
+                                final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+
+                                if (usuario.usuarioId != null) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => RecomendacionesScreen(
-                                        estiloId: _mapearEstiloPrincipal(resumen),
-                                      ),
+                                      builder: (_) => RecomendacionesScreen(ruId: widget.idRpu,),
                                     ),
                                   );
-                                },
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Error: No se encontró el usuario logueado')),
+                                  );
+                                }
+                              },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFFF9A00),
                                   foregroundColor: Colors.white,

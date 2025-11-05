@@ -3,14 +3,17 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/tcc_api_v2/';
-  static const Map<String, String> headers = {
-    'Content-Type': 'application/json',
-  };
+  // =========================================
+  // 🔹 Configuración base de la API
+  // =========================================
+  static const String baseUrl = 'http://localhost:8080/tcc_api_v2';
 
-  // ============================================================
-  // 🔹 Manejo de respuesta común
-  // ============================================================
+  // 🔹 Encabezados por defecto
+  static const Map<String, String> defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+  
   Map<String, dynamic> _handleResponse(http.Response response) {
     try {
       final decoded = jsonDecode(response.body);
@@ -30,9 +33,7 @@ class ApiService {
     }
   }
 
-  // ============================================================
-  // 🔹 Método de seguridad (manejo de excepciones y timeout)
-  // ============================================================
+
   Future<Map<String, dynamic>> _safeRequest(
       Future<http.Response> Function() request) async {
     try {
@@ -48,9 +49,7 @@ class ApiService {
     }
   }
 
-  // ============================================================
-  // 🔹 LOGIN DE USUARIO (con trazas y manejo completo)
-  // ============================================================
+
   Future<Map<String, dynamic>> login(String email, String password) async {
     print('🌐 Usando baseUrl: $baseUrl');
     final url = Uri.parse('$baseUrl/auth/login');
@@ -61,7 +60,7 @@ class ApiService {
       final response = await http
           .post(
         url,
-        headers: headers,
+        headers: defaultHeaders,
         body: jsonEncode({'email': email, 'password': password}),
       )
           .timeout(const Duration(seconds: 15));
@@ -80,37 +79,31 @@ class ApiService {
     }
   }
 
-  // ============================================================
-  // 🔹 REGISTRO
-  // ============================================================
+ 
   Future<Map<String, dynamic>> registrarUsuario(Map<String, dynamic> body) async {
     debugPrint('📤 [REGISTRO] Body: $body');
     return _safeRequest(() => http.post(
       Uri.parse('$baseUrl/auth/registro'),
-      headers: headers,
+      headers: defaultHeaders,
       body: jsonEncode(body),
     ));
   }
 
-  // ============================================================
-  // 🔹 PERFIL (GET)
-  // ============================================================
+
   Future<Map<String, dynamic>> fetchPerfil(int usuarioId) async {
     debugPrint('📤 [PERFIL] Obteniendo perfil para usuarioId=$usuarioId');
     return _safeRequest(() =>
         http.get(Uri.parse('$baseUrl/usuario/perfil?usuario_id=$usuarioId')));
   }
 
-  // ============================================================
-  // 🔹 MODIFICAR PERFIL
-  // ============================================================
+
   Future<Map<String, dynamic>> modificarPerfil(Map<String, dynamic> body) async {
     final url = Uri.parse('$baseUrl/usuario/modificar');
     debugPrint('📤 [MODIFICAR PERFIL] Body: $body');
 
     try {
       final response = await http
-          .post(url, headers: headers, body: jsonEncode(body))
+          .post(url, headers: defaultHeaders, body: jsonEncode(body))
           .timeout(const Duration(seconds: 15));
 
       debugPrint('📥 [MODIFICAR PERFIL] Status: ${response.statusCode}');
@@ -140,30 +133,24 @@ class ApiService {
     }
   }
 
-  // ============================================================
-  // 🔹 TEST POR EDAD
-  // ============================================================
+
   Future<Map<String, dynamic>> fetchTestPorEdad(int usuarioId) async {
     debugPrint('📤 [TEST POR EDAD] usuarioId=$usuarioId');
     return _safeRequest(() =>
         http.get(Uri.parse('$baseUrl/tests/por-edad?usuario_id=$usuarioId')));
   }
 
-  // ============================================================
-  // 🔹 ENVIAR RESPUESTAS
-  // ============================================================
+
   Future<Map<String, dynamic>> enviarRespuestas(Map<String, dynamic> body) async {
     debugPrint('📤 [ENVIAR RESPUESTAS] Body: $body');
     return _safeRequest(() => http.post(
       Uri.parse('$baseUrl/tests/guardar'),
-      headers: headers,
+      headers: defaultHeaders,
       body: jsonEncode(body),
     ));
   }
 
-  // ============================================================
-  // 🔹 MIS TESTS
-  // ============================================================
+
   Future<List<Map<String, dynamic>>> fetchMisTests(int usuarioId) async {
     final url = Uri.parse('$baseUrl/tests/mis-tests?usuario_id=$usuarioId');
     debugPrint('📤 [MIS TESTS] URL: $url');
@@ -184,9 +171,6 @@ class ApiService {
     return [];
   }
 
-  // ============================================================
-  // 🔹 DETALLE TEST
-  // ============================================================
   Future<Map<String, dynamic>> fetchDetalleTest(int idRpu) async {
     final url = Uri.parse('$baseUrl/tests/detalle?id_rpu=$idRpu');
     debugPrint('📤 [DETALLE TEST] URL: $url');
@@ -214,5 +198,15 @@ class ApiService {
         'data': []
       };
     }
+  }
+
+  Future<Map<String, dynamic>> fetchRecomendaciones(int usuarioId, {int? ruId}) async {
+    final qp = {
+      'id_usuario': usuarioId.toString(),
+      if (ruId != null) 'ru_id': ruId.toString(),
+    };
+    final uri = Uri.parse('$baseUrl/recomendaciones/usuario').replace(queryParameters: qp);
+    final res = await http.get(uri, headers: defaultHeaders);
+    return jsonDecode(res.body) as Map<String, dynamic>;
   }
 }

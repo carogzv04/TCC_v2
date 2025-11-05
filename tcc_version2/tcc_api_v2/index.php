@@ -24,7 +24,7 @@ Router::get('/', function() {
             '/usuario/modificar'    => 'POST - Modifica perfil',
             '/tests/por-edad'       => 'GET - Devuelve test según edad',
             '/tests/guardar'        => 'POST - Guarda respuestas de test',
-            '/resultados/usuario'   => 'GET - Devuelve último resultado'
+            '/resultados/usuario'   => 'GET - Devuelve último resultado',
             '/recomendaciones/usuario' => 'GET - Muestra recomendaciones a usuario'
         ]
     ]);

@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'recomendaciones_screen.dart'; // 🔹 Importamos la nueva pantalla
+import 'package:provider/provider.dart';
+import 'recomendaciones_screen.dart';
+import '../viewmodels/usuario_viewmodel.dart';
 
 class ResultadoTestScreen extends StatelessWidget {
   final double porcentajeA;
   final double porcentajeB;
   final int estiloId;
 
+   final int idRpu;
+   
   const ResultadoTestScreen({
     super.key,
     required this.porcentajeA,
     required this.porcentajeB,
-    required this.estiloId,
+    required this.estiloId, required this.idRpu,
   });
 
+ 
   String _getEstiloDescripcion(int id) {
     switch (id) {
       case 1:
@@ -111,16 +116,24 @@ class ResultadoTestScreen extends StatelessWidget {
 
               const SizedBox(height: 30),
 
-              // === Botón "Ver recomendaciones" ===
               ElevatedButton.icon(
-                onPressed: () {
+              onPressed: () {
+                // Accedemos al ViewModel actual
+                final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+
+                if (usuario.usuarioId != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => RecomendacionesScreen(estiloId: estiloId),
+                      builder: (_) => RecomendacionesScreen(ruId: idRpu,),
                     ),
                   );
-                },
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error: No se encontró el usuario logueado')),
+                  );
+                }
+              },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF9A00), // naranja
                   foregroundColor: Colors.white,
