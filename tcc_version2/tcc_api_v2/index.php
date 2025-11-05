@@ -34,6 +34,8 @@ require_once __DIR__ . '/routes/auth.php';
 require_once __DIR__ . '/routes/usuario.php';
 require_once __DIR__ . '/routes/tests.php';
 require_once __DIR__ . '/routes/resultados.php';
+require_once __DIR__ . '/routes/recomendaciones.php';
+
 
 // ---- Ejecutar enrutamiento ----
 Router::dispatch();
