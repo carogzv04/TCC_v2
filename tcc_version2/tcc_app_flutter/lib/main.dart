@@ -48,7 +48,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'TCC App',
 
-      // 🌍 Localización
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -61,7 +60,6 @@ class MyApp extends StatelessWidget {
       ],
       locale: const Locale('es', 'ES'),
 
-      // 🎨 Nuevo esquema de colores
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFF6F7D7), // fondo beige claro
         colorScheme: const ColorScheme(
@@ -123,7 +121,10 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      home: isLogged ? const HomeScreen() : const WelcomeScreen(),
+      home: SafeArea(
+        child: isLogged ? const 
+        HomeScreen() : const WelcomeScreen(),
+        ), 
 
       routes: {
         '/login': (context) => const LoginScreen(),

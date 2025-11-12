@@ -6,124 +6,114 @@ import '../services/api_service.dart';
 import 'resultado_test_screen.dart';
 
 class TestScreen extends StatefulWidget {
-const TestScreen({super.key});
+  const TestScreen({super.key});
 
-@override
-State<TestScreen> createState() => _TestScreenState();
+  @override
+  State<TestScreen> createState() => _TestScreenState();
 }
 
-late final int idRpu;
+int idRpu = 0;
 
 class _TestScreenState extends State<TestScreen> {
-bool _isLoading = true;
-bool _isSubmitting = false;
-int? _testId;
+  bool _isLoading = true;
+  bool _isSubmitting = false;
+  int? _testId;
 
-@override
-void initState() {
-super.initState();
-_cargarPreguntas();
-}
+  @override
+  void initState() {
+    super.initState();
+    _cargarPreguntas();
+  }
 
-Future<void> _cargarPreguntas() async {
-final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-final viewModel = Provider.of<TestViewModel>(context, listen: false);
+  Future<void> _cargarPreguntas() async {
+    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+    final viewModel = Provider.of<TestViewModel>(context, listen: false);
 
-try {
-  final response = await ApiService().fetchTestPorEdad(usuario.usuarioId ?? 0);
-  print('🔍 Respuesta del backend: $response');
+    try {
+      final response = await ApiService().fetchTestPorEdad(usuario.usuarioId ?? 0);
+      print('🔍 Respuesta del backend: $response');
 
-  if (response['success'] == true && response['data'] != null) {
-    final data = response['data'];
-    if (data is Map && data['preguntas'] is List) {
-      _testId = (data['test_id'] ?? 0) as int;
-      await viewModel.cargarPreguntasDesdeApi(List.from(data['preguntas']));
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'];
+        if (data is Map && data['preguntas'] is List) {
+          _testId = (data['test_id'] ?? 0) as int;
+          await viewModel.cargarPreguntasDesdeApi(List.from(data['preguntas']));
+        } else {
+          print('⚠️ No hay preguntas válidas en la respuesta.');
+          await viewModel.cargarPreguntasDesdeApi(const []);
+        }
+      } else {
+        print('⚠️ Respuesta sin éxito o sin data válida.');
+        await viewModel.cargarPreguntasDesdeApi(const []);
+      }
+    } catch (e) {
+      print('Error cargando preguntas: $e');
+      await Provider.of<TestViewModel>(context, listen: false)
+          .cargarPreguntasDesdeApi(const []);
+    }
+
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _enviarRespuestas() async {
+    final viewModel = Provider.of<TestViewModel>(context, listen: false);
+    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+
+    if (viewModel.respuestasSeleccionadas.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Responda todas las preguntas antes de enviar.')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final payload = {
+      'usuario_id': usuario.usuarioId,
+      'test_id': _testId,
+      'respuestas': viewModel.respuestasSeleccionadas.entries
+          .map((e) => {'preguntas_id': e.key, 'codigo_op': e.value})
+          .toList(),
+    };
+
+    print('📤 Enviando payload: $payload');
+
+    final response = await ApiService().enviarRespuestas(payload);
+    if (mounted) setState(() => _isSubmitting = false);
+
+    print('📥 Respuesta al guardar: $response');
+
+    if (response['success'] == true) {
+      final data = response['data'] as Map<String, dynamic>? ?? {};
+
+      // === NUEVO FORMATO ===
+      final dimensiones = List<Map<String, dynamic>>.from(data['dimensiones'] ?? []);
+      final estiloDominante = data['estilo_dominante'] ?? 'Indefinido';
+      final porcentajeTotal = (data['porcentaje_total'] as num?)?.toDouble() ?? 0.0;
+      final idRpu = data['ru_id'] ?? 0;
+
+      print('📊 Dimensiones recibidas (${dimensiones.length}): $dimensiones');
+      print('🏆 Estilo dominante: $estiloDominante — Promedio total: $porcentajeTotal');
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ResultadoTestScreen(
+            dimensiones: dimensiones,
+            estiloDominante: estiloDominante,
+            porcentajeTotal: porcentajeTotal,
+            idRpu: idRpu,
+          ),
+        ),
+      );
     } else {
-      print('⚠️ No hay preguntas válidas en la respuesta.');
-      await viewModel.cargarPreguntasDesdeApi(const []);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Error al enviar respuestas')),
+      );
     }
-  } else {
-    print('⚠️ Respuesta sin éxito o sin data válida.');
-    await viewModel.cargarPreguntasDesdeApi(const []);
   }
-} catch (e) {
-  print('Error cargando preguntas: $e');
-  await Provider.of<TestViewModel>(context, listen: false).cargarPreguntasDesdeApi(const []);
-}
-
-if (mounted) setState(() => _isLoading = false);
-
-
-}
-
-Future<void> _enviarRespuestas() async {
-final viewModel = Provider.of<TestViewModel>(context, listen: false);
-final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-
-if (viewModel.respuestasSeleccionadas.isEmpty) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Responda todas las preguntas antes de enviar.')),
-  );
-  return;
-}
-
-setState(() => _isSubmitting = true);
-
-final payload = {
-  'usuario_id': usuario.usuarioId,
-  'test_id': _testId,
-  'respuestas': viewModel.respuestasSeleccionadas.entries
-      .map((e) => {'preguntas_id': e.key, 'codigo_op': e.value})
-      .toList(),
-};
-
-print('📤 Enviando payload: $payload');
-
-final response = await ApiService().enviarRespuestas(payload);
-if (mounted) setState(() => _isSubmitting = false);
-
-print('📥 Respuesta al guardar: $response');
-
-if (response['success'] == true) {
-  final data = (response['data'] as Map?) ?? const {};
-  final porcentajes = (data['porcentajes'] as Map?) ?? const {};
-
-  // Coerce seguro a double
-  double toD(dynamic v) {
-    if (v is num) return v.toDouble();
-    if (v is String) {
-      final p = double.tryParse(v);
-      return p ?? 0;
-    }
-    return 0;
-  }
-
-  final porcentajeA = toD(porcentajes['A']);
-  final porcentajeB = toD(porcentajes['B']);
-  final estiloId = (data['estilo_id'] as int?) ?? 0;
-
-  print('📊 Porcentajes normalizados => A: $porcentajeA, B: $porcentajeB, estiloId: $estiloId');
-
-  if (!mounted) return;
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ResultadoTestScreen(
-        porcentajeA: porcentajeA,
-        porcentajeB: porcentajeB,
-        estiloId: estiloId,
-        idRpu: idRpu,
-      ),
-    ),
-  );
-} else {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(response['message'] ?? 'Error al enviar respuestas')),
-  );
-}
-
-
-}
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +129,7 @@ if (response['success'] == true) {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF3EC1D3)), // ✅ azul principal
+              child: CircularProgressIndicator(color: Color(0xFF3EC1D3)),
             )
           : viewModel.preguntas.isEmpty
               ? const Center(
@@ -161,7 +151,6 @@ if (response['success'] == true) {
                             (pregunta['opciones'] as List?) ?? const [];
                         final preguntaId = (pregunta['id'] ?? 0) as int;
 
-                        // Inicialización defensiva del map de respuestas
                         viewModel.respuestasSeleccionadas[preguntaId] =
                             viewModel.respuestasSeleccionadas[preguntaId] ?? '';
 
@@ -182,7 +171,7 @@ if (response['success'] == true) {
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
-                                    color: Color(0xFF3EC1D3), // ✅ azul principal
+                                    color: Color(0xFF3EC1D3),
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -194,24 +183,20 @@ if (response['success'] == true) {
                                 else
                                   ...List.generate(opciones.length, (i) {
                                     final opcion = opciones[i] as Map;
-                                    final textoOpcion = (opcion['texto'] ??
-                                            'Opción sin texto')
-                                        .toString();
+                                    final textoOpcion =
+                                        (opcion['texto'] ?? 'Opción sin texto').toString();
                                     final codigoOp =
                                         (opcion['codigo_op'] ?? '').toString();
 
                                     return RadioListTile<String>(
                                       value: codigoOp,
-                                      groupValue:
-                                          viewModel.respuestasSeleccionadas[
-                                              preguntaId],
+                                      groupValue: viewModel
+                                          .respuestasSeleccionadas[preguntaId],
                                       title: Text(
                                         textoOpcion,
-                                        style: const TextStyle(
-                                            color: Colors.black87),
+                                        style: const TextStyle(color: Colors.black87),
                                       ),
-                                      activeColor: const Color(
-                                          0xFF3EC1D3), // ✅ azul principal
+                                      activeColor: const Color(0xFF3EC1D3),
                                       onChanged: (value) {
                                         if (value != null && preguntaId != 0) {
                                           viewModel.seleccionarRespuesta(
@@ -225,12 +210,10 @@ if (response['success'] == true) {
                           ),
                         );
                       } catch (e, s) {
-                        debugPrint(
-                            '🔥 EXCEPCIÓN al renderizar pregunta $index: $e\n$s');
+                        debugPrint('🔥 EXCEPCIÓN al renderizar pregunta $index: $e\n$s');
                         return const Text(
                           'Error al renderizar pregunta',
-                          style:
-                              TextStyle(color: Color(0xFFFF165D)), // 🔴 rojo error
+                          style: TextStyle(color: Color(0xFFFF165D)),
                         );
                       }
                     },
@@ -238,7 +221,7 @@ if (response['success'] == true) {
                 ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSubmitting ? null : _enviarRespuestas,
-        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
+        backgroundColor: const Color(0xFF3EC1D3),
         icon: _isSubmitting
             ? const CircularProgressIndicator(
                 color: Colors.white,

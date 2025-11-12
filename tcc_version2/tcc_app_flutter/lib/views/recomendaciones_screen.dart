@@ -189,11 +189,6 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
             ),
           ),
 
-          const SizedBox(height: 10),
-          Text(
-            "Resultado usado (ru_id): ${ruUsado ?? '-'}",
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
 
           const SizedBox(height: 20),
           const Text(

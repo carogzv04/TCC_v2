@@ -5,39 +5,51 @@ import 'recomendaciones_screen.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
 class ResultadoTestScreen extends StatelessWidget {
-  final double porcentajeA;
-  final double porcentajeB;
-  final int estiloId;
+  final List<dynamic> dimensiones;
+  final String estiloDominante;
+  final double porcentajeTotal;
+  final int idRpu;
 
-   final int idRpu;
-   
   const ResultadoTestScreen({
     super.key,
-    required this.porcentajeA,
-    required this.porcentajeB,
-    required this.estiloId, required this.idRpu,
+    required this.dimensiones,
+    required this.estiloDominante,
+    required this.porcentajeTotal,
+    required this.idRpu,
   });
-
- 
-  String _getEstiloDescripcion(int id) {
-    switch (id) {
-      case 1:
-        return 'Tu estilo predominante es A — Activo / Visual';
-      case 2:
-        return 'Tu estilo predominante es B — Reflexivo / Verbal';
-      default:
-        return 'No se pudo determinar un estilo predominante.';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
 
+    // ✅ Tamaño reducido y responsivo
     final chartSize = orientation == Orientation.portrait
-        ? size.width * 0.65
-        : size.height * 0.45;
+        ? size.width * 0.48
+        : size.height * 0.38;
+
+    final colores = [
+      const Color(0xFF3EC1D3),
+      const Color(0xFFFF9A00),
+      const Color(0xFFCB6CE6),
+      const Color(0xFF26E24F),
+    ];
+
+    final valores = <double>[];
+    final etiquetas = <String>[];
+
+    for (var dim in dimensiones) {
+      final nombre = (dim['nombre'] ?? '').toString();
+      final polos = Map<String, dynamic>.from(dim)..remove('nombre');
+      if (polos.values.isEmpty) continue;
+
+      final valMax = polos.values
+          .map((v) => (v is num) ? v.toDouble() : 0.0)
+          .reduce((a, b) => a > b ? a : b);
+
+      valores.add(valMax);
+      etiquetas.add(nombre);
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7D7),
@@ -48,126 +60,127 @@ class ResultadoTestScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Center(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Porcentaje por Estilo de Aprendizaje',
+                'Distribución por Dimensión de Aprendizaje',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF3EC1D3),
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
               SizedBox(
                 height: chartSize,
                 width: chartSize,
                 child: PieChart(
                   PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: chartSize * 0.25,
+                    sectionsSpace: 1.5,
+                    centerSpaceRadius: chartSize * 0.30,
                     startDegreeOffset: -90,
-                    sections: [
-                      PieChartSectionData(
-                        color: const Color(0xFF3EC1D3),
-                        value: porcentajeA,
-                        title: 'A: ${porcentajeA.toStringAsFixed(1)}%',
-                        radius: chartSize * 0.35,
-                        titleStyle: const TextStyle(
-                          fontSize: 18,
+                    sections: List.generate(valores.length, (i) {
+                      final valor = valores[i];
+                      final etiqueta = etiquetas[i];
+                      return PieChartSectionData(
+                        color: colores[i % colores.length],
+                        value: valor,
+                        title:
+                            '${etiqueta.split('–')[0]}\n${valor.toStringAsFixed(1)}%',
+                        radius: chartSize * 0.25,
+                        titleStyle: TextStyle(
+                          fontSize: chartSize * 0.035,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          height: 1.1,
                         ),
-                      ),
-                      PieChartSectionData(
-                        color: const Color(0xFFFF9A00),
-                        value: porcentajeB,
-                        title: 'B: ${porcentajeB.toStringAsFixed(1)}%',
-                        radius: chartSize * 0.35,
-                        titleStyle: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                      );
+                    }),
                   ),
-                  swapAnimationDuration: const Duration(milliseconds: 900),
+                  swapAnimationDuration: const Duration(milliseconds: 800),
                   swapAnimationCurve: Curves.easeOutCubic,
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 25),
 
               Text(
-                _getEstiloDescripcion(estiloId),
+                'Tu estilo dominante es: $estiloDominante',
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: Colors.black87,
                 ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 6),
+              Text(
+                'Promedio general: ${porcentajeTotal.toStringAsFixed(1)}%',
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.black54,
+                ),
+              ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
               ElevatedButton.icon(
-              onPressed: () {
-                // Accedemos al ViewModel actual
-                final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-
-                if (usuario.usuarioId != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RecomendacionesScreen(ruId: idRpu,),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Error: No se encontró el usuario logueado')),
-                  );
-                }
-              },
+                onPressed: () {
+                  final usuario =
+                      Provider.of<UsuarioViewModel>(context, listen: false);
+                  if (usuario.usuarioId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RecomendacionesScreen(ruId: idRpu),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Error: No se encontró el usuario logueado'),
+                      ),
+                    );
+                  }
+                },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9A00), // naranja
+                  backgroundColor: const Color(0xFFFF9A00),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(220, 50),
+                  minimumSize: const Size(200, 45),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  elevation: 5,
+                  elevation: 4,
                 ),
                 icon: const Icon(Icons.lightbulb),
                 label: const Text(
                   'Ver recomendaciones',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
 
-              // === Botón "Volver al inicio" ===
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3EC1D3),
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(200, 50),
+                  minimumSize: const Size(180, 45),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  elevation: 6,
+                  elevation: 4,
                 ),
                 icon: const Icon(Icons.home),
                 label: const Text(
                   'Volver al inicio',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

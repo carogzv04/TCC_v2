@@ -112,7 +112,8 @@ Router::get('/tests/por-edad', function() {
     }
 });
 
-
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 Router::post('/tests/guardar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -132,104 +133,156 @@ Router::post('/tests/guardar', function() {
         $pdo = get_pdo();
         $pdo->beginTransaction();
 
-        // --- CABECERA ---
-        $insertRU = $pdo->prepare("
+        // Insertar cabecera
+        $insertRU = $pdo->prepare('
             INSERT INTO respuestas_usuario (usuario_id, tests_id, fecha_realizacion, valido)
             VALUES (?, ?, NOW(), 1)
-        ");
+        ');
         $insertRU->execute([$usuario_id, $test_id]);
         $ru_id = (int)$pdo->lastInsertId();
-        error_log("🟢 Nuevo registro en respuestas_usuario ID=$ru_id");
 
-        // --- DETALLES ---
-        $buscarOpcion = $pdo->prepare("
-            SELECT id_opciones FROM opciones_respuesta 
+        // Insertar detalles
+        $buscarOpcion = $pdo->prepare('
+            SELECT id_opciones 
+            FROM opciones_respuesta 
             WHERE preguntas_id = ? AND codigo_op = ? LIMIT 1
-        ");
-        $insertDetalle = $pdo->prepare("
-            INSERT INTO detalle_respuestas (ru_id, preguntas_id, or_id) VALUES (?, ?, ?)
-        ");
+        ');
+        $insertDetalle = $pdo->prepare('
+            INSERT INTO detalle_respuestas (ru_id, preguntas_id, or_id)
+            VALUES (?, ?, ?)
+        ');
 
         foreach ($respuestas as $r) {
             $preguntaId = (int)($r['preguntas_id'] ?? 0);
-            $codigoOp = strtoupper(trim($r['codigo_op'] ?? ''));
+            $codigoOp   = strtoupper(trim($r['codigo_op'] ?? ''));
 
             if (!$preguntaId || !$codigoOp) {
-                throw new Exception("Datos de respuesta incompletos");
+                throw new Exception('Datos de respuesta incompletos.');
             }
 
             $buscarOpcion->execute([$preguntaId, $codigoOp]);
             $opcion = $buscarOpcion->fetch();
 
             if (!$opcion) {
-                throw new Exception("Opción inválida para pregunta $preguntaId");
+                throw new Exception("Opción inválida para la pregunta $preguntaId");
             }
 
             $insertDetalle->execute([$ru_id, $preguntaId, (int)$opcion['id_opciones']]);
         }
 
-        // --- CÁLCULO GLOBAL ---
-        $calc = $pdo->prepare("
+        // =====================================================
+        // Cálculo real por dimensión Felder–Silverman
+        // =====================================================
+        $calcDim = $pdo->prepare("
             SELECT 
+                p.dimension_id,
+                d.nombre AS nombre_dimension,
+                d.id_dimension,
                 SUM(CASE WHEN o.codigo_op = 'A' THEN 1 ELSE 0 END) AS total_A,
-                SUM(CASE WHEN o.codigo_op = 'B' THEN 1 ELSE 0 END) AS total_B
-            FROM detalle_respuestas d
-            INNER JOIN opciones_respuesta o ON o.id_opciones = d.or_id
-            WHERE d.ru_id = ?
+                SUM(CASE WHEN o.codigo_op = 'B' THEN 1 ELSE 0 END) AS total_B,
+                COUNT(*) AS total_pregs
+            FROM detalle_respuestas dr
+            INNER JOIN opciones_respuesta o ON o.id_opciones = dr.or_id
+            INNER JOIN preguntas p ON p.id_preguntas = dr.preguntas_id
+            INNER JOIN dimensiones_fs d ON d.id_dimension = p.dimension_id
+            WHERE dr.ru_id = ?
+            GROUP BY p.dimension_id, d.nombre, d.id_dimension
+            ORDER BY d.id_dimension
         ");
-        $calc->execute([$ru_id]);
-        $tot = $calc->fetch(PDO::FETCH_ASSOC);
+        $calcDim->execute([$ru_id]);
+        $dimensiones = $calcDim->fetchAll(PDO::FETCH_ASSOC);
 
-        $total = ($tot['total_A'] + $tot['total_B']) ?: 1;
-        $porcentaje_A = round(($tot['total_A'] / $total) * 100, 2);
-        $porcentaje_B = round(($tot['total_B'] / $total) * 100, 2);
-        $estilo_id = ($porcentaje_A >= $porcentaje_B) ? 1 : 2;
-
-        $insertRes = $pdo->prepare("
-            INSERT INTO resultados_usuario (usuario_id, test_id, estilo_id, porcentaje, fecha_resultado)
-            VALUES (?, ?, ?, ?, NOW())
-        ");
-        $insertRes->execute([$usuario_id, $test_id, $estilo_id, max($porcentaje_A, $porcentaje_B)]);
-        error_log("🟢 Resultado global insertado para ru_id=$ru_id");
-
-        // --- DIMENSIONES ---
-        $dimensiones = [
-            ['id' => 1, 'polo_a' => 'Activo', 'polo_b' => 'Reflexivo'],
-            ['id' => 2, 'polo_a' => 'Visual', 'polo_b' => 'Verbal'],
-            ['id' => 3, 'polo_a' => 'Secuencial', 'polo_b' => 'Global'],
-            ['id' => 4, 'polo_a' => 'Sensorial', 'polo_b' => 'Intuitivo'],
-        ];
-
-        $insertDim = $pdo->prepare("
-            INSERT INTO resultado_dimension (ru_id, dimensiones_id, polo_a, polo_b, neto, magnitud, ganador, total_pregs, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        ");
-
-        foreach ($dimensiones as $dim) {
-            $neto = rand(-5, 5);
-            $magnitud = abs($neto);
-            $ganador = $neto >= 0 ? $dim['polo_a'] : $dim['polo_b'];
-            $insertDim->execute([$ru_id, $dim['id'], $dim['polo_a'], $dim['polo_b'], $neto, $magnitud, $ganador, 11]);
-            error_log("   ➕ Dimensión {$dim['id']} insertada ($ganador)");
+        if (!$dimensiones) {
+            throw new Exception("No se encontraron resultados por dimensión.");
         }
 
-        $pdo->commit();
-        error_log("✅ Commit completado para ru_id=$ru_id");
+        // Procesar resultados
+        $dataDimensiones = [];
+        $sumPorcentajes = 0;
+        $contadorDim = 0;
+        $mayorPorcentaje = 0;
+        $estiloDominante = '';
 
-        json_response(true, 'Respuestas guardadas correctamente', [
-            'ru_id' => $ru_id,
-            'porcentajes' => ['A' => $porcentaje_A, 'B' => $porcentaje_B],
-            'estilo_id' => $estilo_id
-        ], 201);
+        foreach ($dimensiones as $dim) {
+            $totalA = (int)$dim['total_A'];
+            $totalB = (int)$dim['total_B'];
+            $totalPregs = max((int)$dim['total_pregs'], 1);
+
+            $porcA = round(($totalA / $totalPregs) * 100, 2);
+            $porcB = round(($totalB / $totalPregs) * 100, 2);
+
+            // Determinar polos dinámicamente según nombre, con control de formato
+            $partes = explode('–', $dim['nombre_dimension']);
+            $poloA = trim($partes[0] ?? 'PoloA');
+            $poloB = trim($partes[1] ?? 'PoloB');
+
+            // Sumar para promedio global
+            $sumPorcentajes += max($porcA, $porcB);
+            $contadorDim++;
+
+            // Determinar estilo dominante global
+            if (max($porcA, $porcB) > $mayorPorcentaje) {
+                $mayorPorcentaje = max($porcA, $porcB);
+                $estiloDominante = ($porcA >= $porcB) ? trim($poloA) : trim($poloB);
+            }
+
+            $dataDimensiones[] = [
+                "nombre" => trim($dim['nombre_dimension']),
+                strtolower(trim($poloA)) => $porcA,
+                strtolower(trim($poloB)) => $porcB
+            ];
+
+            // Guardar también en tabla resultado_dimension (opcional)
+            $insertDim = $pdo->prepare("
+                INSERT INTO resultado_dimension 
+                (ru_id, dimensiones_id, polo_a, polo_b, neto, magnitud, ganador, total_pregs, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
+            $neto = $totalA - $totalB;
+            $magnitud = abs($neto);
+            $ganador = ($neto >= 0) ? trim($poloA) : trim($poloB);
+
+            $insertDim->execute([
+                $ru_id,
+                $dim['id_dimension'],
+                trim($poloA),
+                trim($poloB),
+                $neto,
+                $magnitud,
+                $ganador,
+                $totalPregs
+            ]);
+        }
+
+        // Porcentaje promedio total
+        $porcentajeTotal = round($sumPorcentajes / max($contadorDim, 1), 2);
+
+        // Guardar resultado global
+        $insertRes = $pdo->prepare("
+            INSERT INTO resultados_usuario (usuario_id, test_id, estilo_id, porcentaje, fecha_resultado)
+            VALUES (?, ?, NULL, ?, NOW())
+        ");
+        $insertRes->execute([$usuario_id, $test_id, $porcentajeTotal]);
+
+        $pdo->commit();
+
+        // ===================================
+        // Respuesta final JSON
+        // ===================================
+        $dataResultado = [
+            "ru_id" => $ru_id,
+            "dimensiones" => $dataDimensiones,
+            "estilo_dominante" => $estiloDominante,
+            "porcentaje_total" => $porcentajeTotal
+        ];
+
+        json_response(true, "Respuestas guardadas correctamente", $dataResultado, 201);
 
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        error_log("❌ Error en tests/guardar: " . $e->getMessage());
-        json_response(false, 'Error al guardar resultado: ' . $e->getMessage(), null, 500);
+        json_response(false, "Error al guardar resultado: " . $e->getMessage(), null, 500);
     }
 });
-
-
 
 
 // GET /tests/mis-tests?usuario_id=123
@@ -286,7 +339,7 @@ Router::get('/tests/mis-tests', function () {
     }
 });
 
-// GET /debug/rd?ru_id=XXX  ó sin parámetro para usar el último
+
 Router::get('/debug/rd', function () {
     try {
         $pdo = get_pdo();

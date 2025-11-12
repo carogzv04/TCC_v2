@@ -24,7 +24,7 @@ class WelcomeScreen extends StatelessWidget {
                   color: Color(0xFF3EC1D3), 
                 ),
                 child: const Icon(
-                  Icons.psychology_alt,
+                  Icons.psychology_alt, //icono
                   size: 70,
                   color: Colors.white,
                 ),
@@ -32,7 +32,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 30),
 
               const Text(
-                'Bienvenido a la App',
+                'AprendiApp',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
