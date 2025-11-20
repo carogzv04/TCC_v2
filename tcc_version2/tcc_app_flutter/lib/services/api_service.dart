@@ -3,9 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // =========================================
-  // 🔹 Configuración base de la API
-  // =========================================
+
   static const String baseUrl = 'http://localhost:8080/tcc_api_v2';
 
   // 🔹 Encabezados por defecto

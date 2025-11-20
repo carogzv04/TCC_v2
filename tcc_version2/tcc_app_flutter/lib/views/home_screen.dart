@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-            // === Nueva sección: Términos y Condiciones ===
+            // === Términos y Condiciones ===
             ListTile(
               leading: Icon(Icons.description,
                   color: Theme.of(context).colorScheme.primary),

@@ -5,7 +5,7 @@ import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
 class RecomendacionesScreen extends StatefulWidget {
-  final int? ruId; // ← opcional, cuando venís desde un test específico
+  final int? ruId;
 
   const RecomendacionesScreen({super.key, this.ruId});
 
@@ -160,12 +160,21 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
     );
   }
 
-  Widget _buildContenido() {
-    final dimensiones = _data?['dimensiones_detectadas'] ?? [];
-    final recomendaciones = _data?['recomendaciones'] ?? [];
-    final ruUsado = _data?['ru_id_usado'];
+      Widget _buildContenido() {
+      final dimensiones = _data?['dimensiones_detectadas'] ?? [];
+      var recomendaciones = _data?['recomendaciones'] ?? [];
 
-    return Padding(
+      // ---- ELIMINAR DUPLICADOS ----
+      final seen = <String>{};
+      recomendaciones = recomendaciones.where((rec) {
+        final key = "${rec['contenido']}_${rec['polo']}";
+        if (seen.contains(key)) return false;
+        seen.add(key);
+        return true;
+      }).toList();
+      // -----------------------------
+
+      return Padding(
       padding: const EdgeInsets.all(20),
       child: ListView(
         children: [
@@ -235,7 +244,6 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
           ),
 
           const SizedBox(height: 30),
-          const Divider(thickness: 1),
 
           const Text(
             "Videos y recursos recomendados:",
@@ -246,27 +254,10 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
             ),
           ),
           const SizedBox(height: 10),
-
-          // --- Recursos hardcodeados según dimensiones detectadas ---
           ...dimensiones.expand<Widget>((dim) {
             final dimNormalizado =
                 "${dim[0].toUpperCase()}${dim.substring(1).toLowerCase()}";
             final extras = recursosExtra[dimNormalizado] ?? [];
-
-            print(
-                "🎥 Buscando recursos para '$dimNormalizado' → ${extras.length} encontrados");
-
-            if (extras.isEmpty) {
-              return [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
-                  child: Text(
-                    "Sin recursos adicionales para $dimNormalizado.",
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                )
-              ];
-            }
 
             return extras
                 .map<Widget>(

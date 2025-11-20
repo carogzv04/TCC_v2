@@ -45,13 +45,24 @@ Router::get('/recomendaciones/usuario', function() {
             ORDER BY dimensiones_id ASC
         ");
         $d->execute([$ruId]);
-        $dimensiones = $d->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($dimensiones)) {
+       $dimensionesOriginales = $d->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($dimensionesOriginales)) {
             json_response(false, 'No se encontraron dimensiones ganadoras para este resultado', ['ru_id' => $ruId], 404);
         }
 
-        // 3) Recomendar por polos ganadores (sin duplicados)
+        $dimensiones = [];
+
+        foreach ($dimensionesOriginales as $dim) {
+            if ($dim === "Sensorial-Intuitivo") {
+                $dimensiones[] = "Sensorial";
+                $dimensiones[] = "Intuitivo";
+            } else {
+                $dimensiones[] = $dim;
+            }
+        }
+        
         $placeholders = implode(',', array_fill(0, count($dimensiones), '?'));
         $sql = "
             SELECT DISTINCT
