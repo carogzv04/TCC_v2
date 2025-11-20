@@ -42,5 +42,5 @@ flutter:
 
 flutter_icons:
   android: true
-  ios: true
+  ios: false
   image_path: "assets/icons/psychology_alt_55dp_3EC1D3.png"
