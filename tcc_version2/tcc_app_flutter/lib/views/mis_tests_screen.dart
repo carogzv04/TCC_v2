@@ -4,6 +4,7 @@ import 'package:tcc_app_flutter/views/detalle_test_screen.dart';
 import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
+// Listado de tests realizados por el usuario.
 class MisTestsScreen extends StatefulWidget {
   const MisTestsScreen({super.key});
 

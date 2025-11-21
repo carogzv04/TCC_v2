@@ -11,6 +11,7 @@ import 'test_screen.dart';
 import 'login_screen.dart';
 import 'terminos_screen.dart';
 
+// Pantalla principal con acceso a tests, perfil y términos.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 

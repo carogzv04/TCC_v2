@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
+// Pantalla con recomendaciones personalizadas según el perfil.
 class RecomendacionesScreen extends StatefulWidget {
   final int? ruId;
 

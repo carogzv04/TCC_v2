@@ -9,6 +9,8 @@ import '../utils/sheets.dart';
 import 'perfil_edit_screen.dart';
 import 'login_screen.dart';
 
+
+// Pantalla de perfil y acciones de cuenta.
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
 

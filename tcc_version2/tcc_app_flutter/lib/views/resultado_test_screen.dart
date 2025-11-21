@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'recomendaciones_screen.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
+// Pantalla que muestra resultados del test y gráfico resumen.
 class ResultadoTestScreen extends StatelessWidget {
   final List<dynamic> dimensiones;
   final String estiloDominante;

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 
+// ViewModel del flujo de tests (estado, carga y envío de respuestas).
 class TestViewModel extends ChangeNotifier {
 
   List<Map<String, dynamic>> preguntas = [];

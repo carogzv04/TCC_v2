@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'registro_screen.dart';
 
+// Pantalla de bienvenida para usuarios no autenticados.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 

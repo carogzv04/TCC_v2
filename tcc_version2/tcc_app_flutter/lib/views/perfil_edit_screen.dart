@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
+// Pantalla para editar datos del perfil.
 class PerfilEditScreen extends StatefulWidget {
   const PerfilEditScreen({super.key});
 

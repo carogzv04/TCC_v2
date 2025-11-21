@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Servicio local para almacenar/consultar la aceptación de términos.
 class TerminosService {
   static const String key = "terminos_aceptados";
 

@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'recomendaciones_screen.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 
+// Pantalla con detalle de un test realizado (preguntas y respuestas)
 class DetalleTestScreen extends StatefulWidget {
   final int idRpu;
 

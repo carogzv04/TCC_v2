@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+// Pantalla que muestra los Términos y Condiciones.
 class TerminosScreen extends StatelessWidget {
   const TerminosScreen({super.key});
 

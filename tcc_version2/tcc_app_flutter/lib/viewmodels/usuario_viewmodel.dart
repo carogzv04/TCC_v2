@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../utils/session_manager.dart';
 
+// ViewModel de usuario (perfil, autenticación y sincronización con backend).
 class UsuarioViewModel extends ChangeNotifier {
   int? usuarioId;
   String? nombreCompleto;
@@ -9,26 +10,26 @@ class UsuarioViewModel extends ChangeNotifier {
   String? token;
   bool isLoggedIn = false;
 
-  String? fechaNacimiento;     
-  String? sexo;                
-  String? diagnosticoPrevio;   
-  String? fotoPerfil;           
-  String? fechaRegistro;        
+  String? fechaNacimiento;
+  String? sexo;
+  String? diagnosticoPrevio;
+  String? fotoPerfil;
+  String? fechaRegistro;
 
   Future<void> cargarUsuario() async {
     final session = await SessionManager.getSession();
     if (session != null) {
       usuarioId = session['usuario_id'] ?? session['id_usuarios'];
-      nombreCompleto    = session['nombre_completo'];
-      email             = session['email'];
-      token             = session['token'];
-      isLoggedIn        = session['isLoggedIn'] ?? false;
+      nombreCompleto = session['nombre_completo'];
+      email = session['email'];
+      token = session['token'];
+      isLoggedIn = session['isLoggedIn'] ?? false;
 
-      fechaNacimiento   = session['fecha_nacimiento'];
-      sexo              = session['sexo'];
+      fechaNacimiento = session['fecha_nacimiento'];
+      sexo = session['sexo'];
       diagnosticoPrevio = session['diagnostico_previo'];
-      fotoPerfil        = session['foto_perfil'];
-      fechaRegistro     = session['fecha_registro'];
+      fotoPerfil = session['foto_perfil'];
+      fechaRegistro = session['fecha_registro'];
     } else {
       isLoggedIn = false;
     }
@@ -39,17 +40,17 @@ class UsuarioViewModel extends ChangeNotifier {
     await SessionManager.saveSession(data);
 
     usuarioId = data['usuario_id'] ?? data['id_usuarios'];
-    nombreCompleto    = data['nombre_completo'];
-    email             = data['email'];
-    token             = data['token'];
-    isLoggedIn        = true;
+    nombreCompleto = data['nombre_completo'];
+    email = data['email'];
+    token = data['token'];
+    isLoggedIn = true;
 
     // opcionales
-    fechaNacimiento   = data['fecha_nacimiento'];
-    sexo              = data['sexo'];
+    fechaNacimiento = data['fecha_nacimiento'];
+    sexo = data['sexo'];
     diagnosticoPrevio = data['diagnostico_previo'];
-    fotoPerfil        = data['foto_perfil'];
-    fechaRegistro     = data['fecha_registro'];
+    fotoPerfil = data['foto_perfil'];
+    fechaRegistro = data['fecha_registro'];
 
     notifyListeners();
   }
@@ -84,13 +85,13 @@ class UsuarioViewModel extends ChangeNotifier {
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'];
 
-        nombreCompleto    = data['nombre_completo'];
-        email             = data['email'];
-        fechaNacimiento   = data['fecha_nacimiento'];
-        sexo              = data['sexo'];
+        nombreCompleto = data['nombre_completo'];
+        email = data['email'];
+        fechaNacimiento = data['fecha_nacimiento'];
+        sexo = data['sexo'];
         diagnosticoPrevio = data['diagnostico_previo'];
-        fotoPerfil        = data['foto_perfil'];
-        fechaRegistro     = data['fecha_registro'];
+        fotoPerfil = data['foto_perfil'];
+        fechaRegistro = data['fecha_registro'];
 
         await SessionManager.saveSession({
           'usuario_id': usuarioId,
@@ -101,16 +102,11 @@ class UsuarioViewModel extends ChangeNotifier {
           'diagnostico_previo': diagnosticoPrevio,
           'foto_perfil': fotoPerfil,
           'fecha_registro': fechaRegistro,
-          'isLoggedIn': true
+          'isLoggedIn': true,
         });
 
         notifyListeners();
-        
-      } else {
-
-      }
-    } catch (e) {
-
-    }
+      } else {}
+    } catch (e) {}
   }
 }

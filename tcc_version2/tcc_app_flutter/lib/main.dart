@@ -26,11 +26,12 @@ void main() async {
         ChangeNotifierProvider(create: (_) => usuarioViewModel),
         ChangeNotifierProvider(create: (_) => TestViewModel()),
       ],
+      
       child: MyApp(isLogged: isLogged),
     ),
   );
 }
-
+// App raíz; configura tema, rutas y localización.
 class MyApp extends StatelessWidget {
   final bool isLogged;
   const MyApp({super.key, required this.isLogged});

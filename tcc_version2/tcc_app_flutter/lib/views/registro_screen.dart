@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
+// Pantalla de registro de usuario.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 

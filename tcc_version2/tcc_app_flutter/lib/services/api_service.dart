@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+// Cliente HTTP del backend; centraliza llamadas, headers y manejo de respuestas.
 class ApiService {
   // URL base del backend
   static const String baseUrl = 'http://186.208.144.167:8080/tcc_api_v2';
@@ -49,22 +50,23 @@ class ApiService {
   // Login de usuario
   Future<Map<String, dynamic>> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/auth/login');
-    return _safeRequest(() => http.post(
-          url,
-          headers: defaultHeaders,
-          body: jsonEncode({'email': email, 'password': password}),
-        ));
+    return _safeRequest(
+      () => http.post(
+        url,
+        headers: defaultHeaders,
+        body: jsonEncode({'email': email, 'password': password}),
+      ),
+    );
   }
 
   // Registro de usuario
   Future<Map<String, dynamic>> registrarUsuario(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final url = Uri.parse('$baseUrl/auth/registro');
-    return _safeRequest(() => http.post(
-          url,
-          headers: defaultHeaders,
-          body: jsonEncode(body),
-        ));
+    return _safeRequest(
+      () => http.post(url, headers: defaultHeaders, body: jsonEncode(body)),
+    );
   }
 
   // Obtiene perfil por id
@@ -75,13 +77,12 @@ class ApiService {
 
   // Modifica perfil
   Future<Map<String, dynamic>> modificarPerfil(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final url = Uri.parse('$baseUrl/usuario/modificar');
-    return _safeRequest(() => http.post(
-          url,
-          headers: defaultHeaders,
-          body: jsonEncode(body),
-        ));
+    return _safeRequest(
+      () => http.post(url, headers: defaultHeaders, body: jsonEncode(body)),
+    );
   }
 
   // Lista de tests disponibles por edad
@@ -92,20 +93,20 @@ class ApiService {
 
   // Envía respuestas del test
   Future<Map<String, dynamic>> enviarRespuestas(
-      Map<String, dynamic> body) async {
+    Map<String, dynamic> body,
+  ) async {
     final url = Uri.parse('$baseUrl/tests/guardar');
-    return _safeRequest(() => http.post(
-          url,
-          headers: defaultHeaders,
-          body: jsonEncode(body),
-        ));
+    return _safeRequest(
+      () => http.post(url, headers: defaultHeaders, body: jsonEncode(body)),
+    );
   }
 
   // Lista tests realizados por el usuario
   Future<List<Map<String, dynamic>>> fetchMisTests(int usuarioId) async {
     final url = Uri.parse('$baseUrl/tests/mis-tests?usuario_id=$usuarioId');
-    final res =
-        await _safeRequest(() => http.get(url, headers: defaultHeaders));
+    final res = await _safeRequest(
+      () => http.get(url, headers: defaultHeaders),
+    );
 
     if (res['success'] == true && res['data'] is List) {
       return List<Map<String, dynamic>>.from(res['data'] as List);
@@ -120,14 +121,17 @@ class ApiService {
   }
 
   // Recomendaciones por usuario y opcional ruId
-  Future<Map<String, dynamic>> fetchRecomendaciones(int usuarioId,
-      {int? ruId}) async {
+  Future<Map<String, dynamic>> fetchRecomendaciones(
+    int usuarioId, {
+    int? ruId,
+  }) async {
     final qp = {
       'id_usuario': usuarioId.toString(),
       if (ruId != null) 'ru_id': ruId.toString(),
     };
-    final uri = Uri.parse('$baseUrl/recomendaciones/usuario')
-        .replace(queryParameters: qp);
+    final uri = Uri.parse(
+      '$baseUrl/recomendaciones/usuario',
+    ).replace(queryParameters: qp);
     return _safeRequest(() => http.get(uri, headers: defaultHeaders));
   }
 }

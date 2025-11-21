@@ -5,6 +5,7 @@ import '../utils/session_manager.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 import 'home_screen.dart';
 
+// Pantalla de inicio de sesión
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 

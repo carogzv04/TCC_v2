@@ -5,6 +5,7 @@ import '../viewmodels/usuario_viewmodel.dart';
 import '../services/api_service.dart';
 import 'resultado_test_screen.dart';
 
+// Pantalla para realizar el test interactivo.
 class TestScreen extends StatefulWidget {
   const TestScreen({super.key});
 
