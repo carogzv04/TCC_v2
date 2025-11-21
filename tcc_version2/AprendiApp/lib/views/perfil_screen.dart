@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import '../viewmodels/usuario_viewmodel.dart';
 import '../utils/session_manager.dart';
 import '../utils/sheets.dart';
-
+import '../services/api_service.dart';
 import 'perfil_edit_screen.dart';
 import 'login_screen.dart';
 
@@ -52,12 +52,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
       _mostrarError('No se pudo obtener tu ID de usuario.');
       return;
     }
+
     try {
-      final dio = Dio();
-      final response = await dio.delete(
-        'http://186.208.144.167:8080/tcc_api_v2/usuario/eliminar?id_usuario=$id',
-      );
-      if (response.statusCode == 200 && response.data['success'] == true) {
+      final api = ApiService();
+      final res = await api.eliminarUsuario(id);
+
+      if (res['success'] == true) {
         await SessionManager.logoutKeepData();
         if (!mounted) return;
         Navigator.pushAndRemoveUntil(
@@ -66,7 +66,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
           (route) => false,
         );
       } else {
-        _mostrarError('No se pudo eliminar la cuenta.');
+        _mostrarError(
+          res['message']?.toString() ?? 'No se pudo eliminar la cuenta.',
+        );
       }
     } catch (_) {
       _mostrarError('Error al conectar con el servidor.');
