@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../db.php';
 
-// === Obtener test por edad ===
+/** GET /tests/por-edad */
 Router::get('/tests/por-edad', function() {
     $usuario_id = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null;
     if (!$usuario_id) json_response(false, 'Debe enviar usuario_id', null, 400);
@@ -82,7 +82,7 @@ Router::get('/tests/por-edad', function() {
     }
 });
 
-// === Guardar respuestas ===
+/** POST /tests/guardar */
 Router::post('/tests/guardar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -151,7 +151,7 @@ Router::post('/tests/guardar', function() {
     }
 });
 
-// === Listar tests realizados ===
+/** GET /tests/mis-tests */
 Router::get('/tests/mis-tests', function () {
     $usuario_id = isset($_GET['usuario_id']) ? (int) $_GET['usuario_id'] : 0;
     if ($usuario_id <= 0) json_response(false, 'Debe enviar usuario_id', null, 400);
@@ -182,7 +182,7 @@ Router::get('/tests/mis-tests', function () {
     }
 });
 
-// --- GET /usuario/perfil ---
+/** GET /usuario/perfil */
 Router::get('/usuario/perfil', function() {
     $usuario_id = isset($_GET['usuario_id']) ? (int)$_GET['usuario_id'] : null;
     $email      = isset($_GET['email']) ? trim($_GET['email']) : null;
@@ -209,7 +209,6 @@ Router::get('/usuario/perfil', function() {
             json_response(false, 'Usuario no encontrado', null, 404);
         }
 
-        // Devolvé con claves consistentes
         json_response(true, 'Perfil obtenido correctamente', [
             'usuario_id'         => (int)$u['id_usuarios'],
             'nombre_completo'    => $u['nombre_completo'],
@@ -226,7 +225,7 @@ Router::get('/usuario/perfil', function() {
 });
 
 
-// --- POST /usuario/modificar ---
+/** POST /usuario/modificar */
 Router::post('/usuario/modificar', function() {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -268,7 +267,6 @@ Router::post('/usuario/modificar', function() {
             json_response(false, 'Usuario no encontrado', null, 404);
         }
 
-
         json_response(true, 'Perfil actualizado correctamente', [
     'usuario_id' => $usuario['id_usuarios'],
     'nombre_completo' => $usuario['nombre_completo'],
@@ -284,9 +282,7 @@ Router::post('/usuario/modificar', function() {
     }
 });
 
-// ============================================
-//   DELETE /usuario/eliminar?id_usuario=123
-// ============================================
+/** DELETE /usuario/eliminar */
 Router::delete('/usuario/eliminar', function () {
     require_once __DIR__ . '/../db.php';
     $pdo = get_pdo();
@@ -300,12 +296,10 @@ Router::delete('/usuario/eliminar', function () {
     try {
         $pdo->beginTransaction();
 
-        // 1. Buscar todos los ru_id (respuestas_usuario) del usuario
         $stmt = $pdo->prepare("SELECT id_rpu FROM respuestas_usuario WHERE usuario_id = ?");
         $stmt->execute([$usuarioId]);
         $ru_list = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        // 2. Eliminar detalle_respuestas por cada ru_id
         if (!empty($ru_list)) {
             $delDetalle = $pdo->prepare("DELETE FROM detalle_respuestas WHERE ru_id = ?");
             foreach ($ru_list as $ruId) {
@@ -313,15 +307,12 @@ Router::delete('/usuario/eliminar', function () {
             }
         }
 
-        // 3. Eliminar respuestas_usuario
         $delRu = $pdo->prepare("DELETE FROM respuestas_usuario WHERE usuario_id = ?");
         $delRu->execute([$usuarioId]);
 
-        // 4. Eliminar resultados_usuario
         $delRes = $pdo->prepare("DELETE FROM resultados_usuario WHERE usuario_id = ?");
         $delRes->execute([$usuarioId]);
 
-        // 5. Finalmente eliminar el usuario
         $delUsuario = $pdo->prepare("DELETE FROM usuarios WHERE id_usuarios = ?");
         $delUsuario->execute([$usuarioId]);
 
@@ -331,7 +322,7 @@ Router::delete('/usuario/eliminar', function () {
 
     } catch (Throwable $e) {
         $pdo->rollBack();
-        error_log("❌ Error al eliminar usuario $usuarioId: " . $e->getMessage());
+        error_log("Error al eliminar usuario $usuarioId: " . $e->getMessage());
         json_response(false, "Error interno al eliminar la cuenta.", null, 500);
     }
 });

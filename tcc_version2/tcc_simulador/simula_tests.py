@@ -7,9 +7,8 @@ from typing import Dict, List
 
 NUM_USERS = 5               
 QUESTIONS = 25                
-API_URL = "http://localhost:8080/tcc_api_v2/tests/guardar"
+API_URL = "http://186.208.144.167:8080/tcc_api_v2/tests/guardar"
 
-# Mapea cada conjunto de preguntas a una dimensión
 DIMENSIONS = {
     "Activo-Reflexivo": list(range(1, 7)),
     "Sensorial-Intuitivo": list(range(7, 13)),
@@ -23,10 +22,6 @@ TEST_ID = 3
 
 random.seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
-
-# ====================================
-# FUNCIONES DE SIMULACIÓN
-# ====================================
 
 def perfil_aleatorio() -> Dict[str, float]:
     perfil = {}
@@ -62,7 +57,7 @@ def enviar_resultado(usuario_id:int, test_id:int, respuestas:List[Dict[str,str]]
         print(f"POST usuario_id={usuario_id} -> status {r.status_code}")
         print(r.json())
     except Exception as e:
-        print(f"❌ Error al enviar usuario {usuario_id}: {e}")
+        print(f"Error al enviar usuario {usuario_id}: {e}")
 
 
 if __name__ == "__main__":
@@ -72,4 +67,4 @@ if __name__ == "__main__":
         respuestas = simular_respuestas_por_usuario(perfil)
         enviar_resultado(usuario_id, TEST_ID, respuestas)
 
-    print("✅ Simulación completada.")
+    print("Simulación completada.")

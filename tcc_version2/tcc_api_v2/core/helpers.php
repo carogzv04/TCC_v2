@@ -1,11 +1,7 @@
 <?php
-// ============================================
-//  core/helpers.php
-//  Funciones globales para JSON, logs y errores
-// ============================================
 
+// Funciones globales para JSON, logs y errores
 
-// --- función JSON uniforme ---
 function json_response(bool $success, string $message, $data = null, int $status = 200): void {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
@@ -18,7 +14,6 @@ function json_response(bool $success, string $message, $data = null, int $status
     exit;
 }
 
-// --- registro en archivo logs/app.log ---
 function app_log(string $msg): void {
     $dir = __DIR__ . '/../logs';
     if (!is_dir($dir)) {
@@ -29,7 +24,6 @@ function app_log(string $msg): void {
     @file_put_contents($path, $entry, FILE_APPEND);
 }
 
-// --- manejador de errores globales ---
 set_exception_handler(function ($e) {
     app_log('Excepción: ' . $e->getMessage());
     if (APP_DEBUG) {

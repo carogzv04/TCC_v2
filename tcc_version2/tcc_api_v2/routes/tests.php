@@ -1,13 +1,7 @@
 <?php
 require_once __DIR__ . '/../db.php';
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-/**
- * GET /tests/por-edad?usuario_id=XX
- * Devuelve el test vigente para la edad del usuario con sus preguntas y opciones.
- */
+/** GET /tests/por-edad */
 Router::get('/tests/por-edad', function () {
     $usuario_id = isset($_GET['usuario_id']) ? (int) $_GET['usuario_id'] : null;
 
@@ -18,7 +12,6 @@ Router::get('/tests/por-edad', function () {
     try {
         $pdo = get_pdo();
 
-        // Fecha de nacimiento del usuario
         $stmt = $pdo->prepare('SELECT fecha_nacimiento FROM usuarios WHERE id_usuarios = ?');
         $stmt->execute([$usuario_id]);
         $usr = $stmt->fetch();
@@ -27,11 +20,9 @@ Router::get('/tests/por-edad', function () {
             json_response(false, 'Usuario no encontrado', null, 404);
         }
 
-        // Calcular edad
         $fn   = new DateTime($usr['fecha_nacimiento']);
         $edad = (new DateTime())->diff($fn)->y;
 
-        // Test que aplica para la edad
         $t = $pdo->prepare('
             SELECT id_test, test_key, test_nombre, test_descripcion
             FROM tests
@@ -56,7 +47,6 @@ Router::get('/tests/por-edad', function () {
 
         $test_id = (int) $test['id_test'];
 
-        // Preguntas del test
         $p = $pdo->prepare('
             SELECT id_preguntas, numero_pregunta, texto, media_tipo, media_url
             FROM preguntas
@@ -77,7 +67,6 @@ Router::get('/tests/por-edad', function () {
             ]);
         }
 
-        // Opciones por pregunta
         $op = $pdo->prepare('
             SELECT id_opciones, preguntas_id, codigo_op, texto_op
             FROM opciones_respuesta
@@ -122,11 +111,7 @@ Router::get('/tests/por-edad', function () {
     }
 });
 
-/**
- * POST /tests/guardar
- * Body JSON: { usuario_id, test_id, respuestas: [{ preguntas_id, codigo_op }, ...] }
- * Inserta respuestas, calcula resultados por dimensión Felder–Silverman y resultado global.
- */
+/** POST /tests/guardar */
 Router::post('/tests/guardar', function () {
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -146,7 +131,6 @@ Router::post('/tests/guardar', function () {
         $pdo = get_pdo();
         $pdo->beginTransaction();
 
-        // Cabecera: respuestas_usuario
         $insertRU = $pdo->prepare('
             INSERT INTO respuestas_usuario (usuario_id, tests_id, fecha_realizacion, valido)
             VALUES (?, ?, NOW(), 1)
@@ -154,7 +138,6 @@ Router::post('/tests/guardar', function () {
         $insertRU->execute([$usuario_id, $test_id]);
         $ru_id = (int) $pdo->lastInsertId();
 
-        // Detalles: detalle_respuestas
         $buscarOpcion = $pdo->prepare('
             SELECT id_opciones
             FROM opciones_respuesta
@@ -184,7 +167,6 @@ Router::post('/tests/guardar', function () {
             $insertDetalle->execute([$ru_id, $preguntaId, (int) $opcion['id_opciones']]);
         }
 
-        // Cálculo por dimensión Felder–Silverman (A/B por pregunta)
         $calcDim = $pdo->prepare('
             SELECT 
                 p.dimension_id,
@@ -208,7 +190,6 @@ Router::post('/tests/guardar', function () {
             throw new Exception('No se encontraron resultados por dimensión.');
         }
 
-        // Procesamiento por dimensión
         $dataDimensiones  = [];
         $sumPorcentajes   = 0;
         $contadorDim      = 0;
@@ -229,13 +210,11 @@ Router::post('/tests/guardar', function () {
             $porcA = round(($totalA / $totalPregs) * 100, 2);
             $porcB = round(($totalB / $totalPregs) * 100, 2);
 
-            // Polos: intentamos partir por EN DASH o HYPHEN
             $nombreDim = $dim['nombre_dimension'] ?? '';
             $partes    = preg_split('/\s*[–-]\s*/u', $nombreDim, 2);
             $poloA     = trim($partes[0] ?? 'PoloA');
             $poloB     = trim($partes[1] ?? 'PoloB');
 
-            // Para promedio global y estilo dominante
             $maxDim = max($porcA, $porcB);
             $sumPorcentajes += $maxDim;
             $contadorDim++;
@@ -251,7 +230,6 @@ Router::post('/tests/guardar', function () {
                 strtolower($poloB)         => $porcB,
             ];
 
-            // Persistir resultado por dimensión
             $neto     = $totalA - $totalB;
             $magnitud = abs($neto);
             $ganador  = ($neto >= 0) ? $poloA : $poloB;
@@ -268,10 +246,8 @@ Router::post('/tests/guardar', function () {
             ]);
         }
 
-        // Porcentaje promedio global
         $porcentajeTotal = round($sumPorcentajes / max($contadorDim, 1), 2);
 
-        // Resultado global (sin estilo_id definido por ahora)
         $insertRes = $pdo->prepare('
             INSERT INTO resultados_usuario (usuario_id, test_id, estilo_id, porcentaje, fecha_resultado)
             VALUES (?, ?, NULL, ?, NOW())
@@ -296,10 +272,7 @@ Router::post('/tests/guardar', function () {
     }
 });
 
-/**
- * GET /tests/mis-tests?usuario_id=XX
- * Lista pruebas realizadas por el usuario con un resumen de resultado.
- */
+/** GET /tests/mis-tests */
 Router::get('/tests/mis-tests', function () {
     $usuario_id = isset($_GET['usuario_id']) ? (int) $_GET['usuario_id'] : 0;
     if ($usuario_id <= 0) {
@@ -354,10 +327,7 @@ Router::get('/tests/mis-tests', function () {
     }
 });
 
-/**
- * GET /tests/detalle?id_rpu=XX
- * Devuelve detalle por dimensión para un resultado (ru_id).
- */
+/** GET /tests/detalle?id_rpu=XX*/
 Router::get('/tests/detalle', function () {
     $id_rpu = isset($_GET['id_rpu']) ? (int) $_GET['id_rpu'] : 0;
 
@@ -397,10 +367,7 @@ Router::get('/tests/detalle', function () {
     }
 });
 
-/**
- * GET /debug/rd?ru_id=XX
- * Utilidad para depurar filas en resultado_dimension.
- */
+/** GET /debug/rd */
 Router::get('/debug/rd', function () {
     try {
         $pdo  = get_pdo();

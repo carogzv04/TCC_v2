@@ -36,8 +36,10 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
     }
 
     try {
-      final response = await ApiService()
-          .fetchRecomendaciones(usuario.usuarioId!, ruId: widget.ruId);
+      final response = await ApiService().fetchRecomendaciones(
+        usuario.usuarioId!,
+        ruId: widget.ruId,
+      );
 
       if (response['success'] == true && response['data'] != null) {
         setState(() {
@@ -69,70 +71,70 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
     "Activo": [
       {
         "texto": "5 DICAS de Aprendizagem Ativa (YouTube)",
-        "url": "https://www.youtube.com/watch?v=8Ik2ov6oYiI"
+        "url": "https://www.youtube.com/watch?v=8Ik2ov6oYiI",
       },
       {
         "texto": "Active Learning Tips for Busy Students",
-        "url": "https://www.youtube.com/watch?v=2aCgZcynFzw"
+        "url": "https://www.youtube.com/watch?v=2aCgZcynFzw",
       },
       {
         "texto": "Cómo estudiar mejor siendo activo",
-        "url": "https://www.youtube.com/watch?v=u165fGFfIlM"
+        "url": "https://www.youtube.com/watch?v=u165fGFfIlM",
       },
     ],
     "Reflexivo": [
       {
         "texto": "Active & Reflective Learners (Active vs Reflective)",
-        "url": "https://www.youtube.com/watch?v=HYSlgNh_iBY"
+        "url": "https://www.youtube.com/watch?v=HYSlgNh_iBY",
       },
       {
         "texto": "Reflective Learning – SkillsYouNeed",
-        "url": "https://www.skillsyouneed.com/ps/reflective-practice.html"
-      }
+        "url": "https://www.skillsyouneed.com/ps/reflective-practice.html",
+      },
     ],
     "Visual": [
       {
         "texto": "Visual Learner Study Tips THAT WORK!",
-        "url": "https://www.youtube.com/watch?v=IN-_S_jj3gE"
+        "url": "https://www.youtube.com/watch?v=IN-_S_jj3gE",
       },
       {
         "texto": "6 Consejos para el aprendizaje visual",
-        "url": "https://www.youtube.com/watch?v=f48aBq8ngyc"
-      }
+        "url": "https://www.youtube.com/watch?v=f48aBq8ngyc",
+      },
     ],
     "Verbal": [
       {
         "texto": "How to Learn Verbally (Study.com)",
-        "url": "https://study.com/academy/lesson/verbal-learning-style.html"
+        "url": "https://study.com/academy/lesson/verbal-learning-style.html",
       },
       {
         "texto": "Tips for the Visual and Verbal Learners",
-        "url": "https://www.youtube.com/watch?v=cGhUApkrrm0"
-      }
+        "url": "https://www.youtube.com/watch?v=cGhUApkrrm0",
+      },
     ],
     "Secuencial": [
       {
         "texto": "Aprendizaje secuencial y global: estrategias",
-        "url": "https://www.youtube.com/watch?v=CzrL8wIJaIw"
-      }
+        "url": "https://www.youtube.com/watch?v=CzrL8wIJaIw",
+      },
     ],
     "Global": [
       {
         "texto": "Active Recall: How to Remember Better!",
-        "url": "https://www.youtube.com/watch?v=-83GY7pXTWc"
-      }
+        "url": "https://www.youtube.com/watch?v=-83GY7pXTWc",
+      },
     ],
     "Sensorial": [
       {
         "texto": "Qual o seu estilo de aprendizagem? Sensorial ou Intuitivo",
-        "url": "https://www.youtube.com/watch?v=htPFbXqEdHw"
-      }
+        "url": "https://www.youtube.com/watch?v=htPFbXqEdHw",
+      },
     ],
     "Intuitivo": [
       {
         "texto": "Personalidade: sensorial e intuitivo",
-        "url": "https://www.youtube.com/watch?v=84KeXaSJflg"
-      }
+        "url": "https://www.youtube.com/watch?v=84KeXaSJflg",
+      },
     ],
   };
 
@@ -149,32 +151,30 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.orange))
           : _error != null
-              ? Center(
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.red, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              : _buildContenido(),
+          ? Center(
+              child: Text(
+                _error!,
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            )
+          : _buildContenido(),
     );
   }
 
-      Widget _buildContenido() {
-      final dimensiones = _data?['dimensiones_detectadas'] ?? [];
-      var recomendaciones = _data?['recomendaciones'] ?? [];
+  Widget _buildContenido() {
+    final dimensiones = _data?['dimensiones_detectadas'] ?? [];
+    var recomendaciones = _data?['recomendaciones'] ?? [];
 
-      // ---- ELIMINAR DUPLICADOS ----
-      final seen = <String>{};
-      recomendaciones = recomendaciones.where((rec) {
-        final key = "${rec['contenido']}_${rec['polo']}";
-        if (seen.contains(key)) return false;
-        seen.add(key);
-        return true;
-      }).toList();
-      // -----------------------------
+    final seen = <String>{};
+    recomendaciones = recomendaciones.where((rec) {
+      final key = "${rec['contenido']}_${rec['polo']}";
+      if (seen.contains(key)) return false;
+      seen.add(key);
+      return true;
+    }).toList();
 
-      return Padding(
+    return Padding(
       padding: const EdgeInsets.all(20),
       child: ListView(
         children: [
@@ -198,7 +198,6 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
             ),
           ),
 
-
           const SizedBox(height: 20),
           const Text(
             "Recomendaciones desde tu perfil:",
@@ -210,38 +209,33 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
           ),
           const SizedBox(height: 10),
 
-          // --- Recomendaciones desde la API ---
-          ...List.generate(
-            recomendaciones.length,
-            (i) {
-              final rec = recomendaciones[i];
-              return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          ...List.generate(recomendaciones.length, (i) {
+            final rec = recomendaciones[i];
+            return Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      rec['contenido'] ?? 'Sin descripción',
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Polo: ${rec['polo'] ?? '-'}",
+                      style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                  ],
                 ),
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rec['contenido'] ?? 'Sin descripción',
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Polo: ${rec['polo'] ?? '-'}",
-                        style:
-                            const TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
 
           const SizedBox(height: 30),
 
@@ -263,8 +257,10 @@ class _RecomendacionesScreenState extends State<RecomendacionesScreen> {
                 .map<Widget>(
                   (link) => TextButton.icon(
                     onPressed: () => _abrirLink(link['url']!),
-                    icon: const Icon(Icons.play_circle_fill,
-                        color: Color(0xFF3EC1D3)),
+                    icon: const Icon(
+                      Icons.play_circle_fill,
+                      color: Color(0xFF3EC1D3),
+                    ),
                     label: Text(
                       link['texto']!,
                       style: const TextStyle(

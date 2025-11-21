@@ -30,8 +30,9 @@ class _TestScreenState extends State<TestScreen> {
     final viewModel = Provider.of<TestViewModel>(context, listen: false);
 
     try {
-      final response = await ApiService().fetchTestPorEdad(usuario.usuarioId ?? 0);
-      print('🔍 Respuesta del backend: $response');
+      final response = await ApiService().fetchTestPorEdad(
+        usuario.usuarioId ?? 0,
+      );
 
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'];
@@ -39,17 +40,17 @@ class _TestScreenState extends State<TestScreen> {
           _testId = (data['test_id'] ?? 0) as int;
           await viewModel.cargarPreguntasDesdeApi(List.from(data['preguntas']));
         } else {
-          print('⚠️ No hay preguntas válidas en la respuesta.');
           await viewModel.cargarPreguntasDesdeApi(const []);
         }
       } else {
-        print('⚠️ Respuesta sin éxito o sin data válida.');
         await viewModel.cargarPreguntasDesdeApi(const []);
       }
     } catch (e) {
       print('Error cargando preguntas: $e');
-      await Provider.of<TestViewModel>(context, listen: false)
-          .cargarPreguntasDesdeApi(const []);
+      await Provider.of<TestViewModel>(
+        context,
+        listen: false,
+      ).cargarPreguntasDesdeApi(const []);
     }
 
     if (mounted) setState(() => _isLoading = false);
@@ -61,7 +62,9 @@ class _TestScreenState extends State<TestScreen> {
 
     if (viewModel.respuestasSeleccionadas.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Responda todas las preguntas antes de enviar.')),
+        const SnackBar(
+          content: Text('Responda todas las preguntas antes de enviar.'),
+        ),
       );
       return;
     }
@@ -76,24 +79,19 @@ class _TestScreenState extends State<TestScreen> {
           .toList(),
     };
 
-    print('📤 Enviando payload: $payload');
-
     final response = await ApiService().enviarRespuestas(payload);
     if (mounted) setState(() => _isSubmitting = false);
-
-    print('📥 Respuesta al guardar: $response');
 
     if (response['success'] == true) {
       final data = response['data'] as Map<String, dynamic>? ?? {};
 
-      // === NUEVO FORMATO ===
-      final dimensiones = List<Map<String, dynamic>>.from(data['dimensiones'] ?? []);
+      final dimensiones = List<Map<String, dynamic>>.from(
+        data['dimensiones'] ?? [],
+      );
       final estiloDominante = data['estilo_dominante'] ?? 'Indefinido';
-      final porcentajeTotal = (data['porcentaje_total'] as num?)?.toDouble() ?? 0.0;
+      final porcentajeTotal =
+          (data['porcentaje_total'] as num?)?.toDouble() ?? 0.0;
       final idRpu = data['ru_id'] ?? 0;
-
-      print('📊 Dimensiones recibidas (${dimensiones.length}): $dimensiones');
-      print('🏆 Estilo dominante: $estiloDominante — Promedio total: $porcentajeTotal');
 
       if (!mounted) return;
 
@@ -110,7 +108,9 @@ class _TestScreenState extends State<TestScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Error al enviar respuestas')),
+        SnackBar(
+          content: Text(response['message'] ?? 'Error al enviar respuestas'),
+        ),
       );
     }
   }
@@ -120,9 +120,9 @@ class _TestScreenState extends State<TestScreen> {
     final viewModel = Provider.of<TestViewModel>(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
+      backgroundColor: const Color(0xFFF6F7D7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
+        backgroundColor: const Color(0xFF3EC1D3),
         title: const Text('Realizar Test'),
         foregroundColor: Colors.white,
         elevation: 2,
@@ -132,93 +132,97 @@ class _TestScreenState extends State<TestScreen> {
               child: CircularProgressIndicator(color: Color(0xFF3EC1D3)),
             )
           : viewModel.preguntas.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No hay preguntas disponibles para este usuario.',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ListView.builder(
-                    itemCount: viewModel.preguntas.length,
-                    itemBuilder: (context, index) {
-                      try {
-                        final pregunta = viewModel.preguntas[index];
-                        final textoPregunta =
-                            '${index + 1}. ${pregunta['texto'] ?? 'Pregunta sin texto'}';
-                        final opciones =
-                            (pregunta['opciones'] as List?) ?? const [];
-                        final preguntaId = (pregunta['id'] ?? 0) as int;
+          ? const Center(
+              child: Text(
+                'No hay preguntas disponibles para este usuario.',
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ListView.builder(
+                itemCount: viewModel.preguntas.length,
+                itemBuilder: (context, index) {
+                  try {
+                    final pregunta = viewModel.preguntas[index];
+                    final textoPregunta =
+                        '${index + 1}. ${pregunta['texto'] ?? 'Pregunta sin texto'}';
+                    final opciones =
+                        (pregunta['opciones'] as List?) ?? const [];
+                    final preguntaId = (pregunta['id'] ?? 0) as int;
 
-                        viewModel.respuestasSeleccionadas[preguntaId] =
-                            viewModel.respuestasSeleccionadas[preguntaId] ?? '';
+                    viewModel.respuestasSeleccionadas[preguntaId] =
+                        viewModel.respuestasSeleccionadas[preguntaId] ?? '';
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          color: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  textoPregunta,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF3EC1D3),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                if (opciones.isEmpty)
-                                  const Text(
-                                    'Sin opciones disponibles',
-                                    style: TextStyle(color: Colors.black45),
-                                  )
-                                else
-                                  ...List.generate(opciones.length, (i) {
-                                    final opcion = opciones[i] as Map;
-                                    final textoOpcion =
-                                        (opcion['texto'] ?? 'Opción sin texto').toString();
-                                    final codigoOp =
-                                        (opcion['codigo_op'] ?? '').toString();
-
-                                    return RadioListTile<String>(
-                                      value: codigoOp,
-                                      groupValue: viewModel
-                                          .respuestasSeleccionadas[preguntaId],
-                                      title: Text(
-                                        textoOpcion,
-                                        style: const TextStyle(color: Colors.black87),
-                                      ),
-                                      activeColor: const Color(0xFF3EC1D3),
-                                      onChanged: (value) {
-                                        if (value != null && preguntaId != 0) {
-                                          viewModel.seleccionarRespuesta(
-                                              preguntaId, value);
-                                        }
-                                      },
-                                    );
-                                  }),
-                              ],
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              textoPregunta,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Color(0xFF3EC1D3),
+                              ),
                             ),
-                          ),
-                        );
-                      } catch (e, s) {
-                        debugPrint('🔥 EXCEPCIÓN al renderizar pregunta $index: $e\n$s');
-                        return const Text(
-                          'Error al renderizar pregunta',
-                          style: TextStyle(color: Color(0xFFFF165D)),
-                        );
-                      }
-                    },
-                  ),
-                ),
+                            const SizedBox(height: 10),
+                            if (opciones.isEmpty)
+                              const Text(
+                                'Sin opciones disponibles',
+                                style: TextStyle(color: Colors.black45),
+                              )
+                            else
+                              ...List.generate(opciones.length, (i) {
+                                final opcion = opciones[i] as Map;
+                                final textoOpcion =
+                                    (opcion['texto'] ?? 'Opción sin texto')
+                                        .toString();
+                                final codigoOp = (opcion['codigo_op'] ?? '')
+                                    .toString();
+
+                                return RadioListTile<String>(
+                                  value: codigoOp,
+                                  groupValue: viewModel
+                                      .respuestasSeleccionadas[preguntaId],
+                                  title: Text(
+                                    textoOpcion,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  activeColor: const Color(0xFF3EC1D3),
+                                  onChanged: (value) {
+                                    if (value != null && preguntaId != 0) {
+                                      viewModel.seleccionarRespuesta(
+                                        preguntaId,
+                                        value,
+                                      );
+                                    }
+                                  },
+                                );
+                              }),
+                          ],
+                        ),
+                      ),
+                    );
+                  } catch (e, s) {
+                    return const Text(
+                      'Error al renderizar pregunta',
+                      style: TextStyle(color: Color(0xFFFF165D)),
+                    );
+                  }
+                },
+              ),
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isSubmitting ? null : _enviarRespuestas,
         backgroundColor: const Color(0xFF3EC1D3),

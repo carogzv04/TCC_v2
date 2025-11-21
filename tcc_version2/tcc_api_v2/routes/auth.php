@@ -1,8 +1,8 @@
 <?php
-// routes/auth.php
+// Routes/auth.php
 require_once __DIR__ . '/../db.php';
 
-// --- POST /auth/registro ---
+// POST /auth/registro 
 Router::post('/auth/registro', function() {
     $body = json_decode(file_get_contents('php://input'), true);
     if (
@@ -25,15 +25,12 @@ Router::post('/auth/registro', function() {
 
     try {
         $pdo = get_pdo();
-
-        // ¿ya existe el email?
         $chk = $pdo->prepare('SELECT 1 FROM usuarios WHERE email = ? LIMIT 1');
         $chk->execute([$email]);
         if ($chk->fetch()) {
             json_response(false, 'El correo ya está registrado', null, 409);
         }
 
-        // Inserta usando la columna `password` en texto plano (según tu decisión)
         $ins = $pdo->prepare('INSERT INTO usuarios
             (nombre_completo, fecha_nacimiento, email, sexo, password, foto_perfil, fecha_registro, diagnostico_previo)
             VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)');
@@ -48,7 +45,7 @@ Router::post('/auth/registro', function() {
     }
 });
 
-// --- POST /auth/login ---
+// POST /auth/login 
 Router::post('/auth/login', function() {
     $body = json_decode(file_get_contents('php://input'), true);
     if (empty($body['email']) || empty($body['password'])) {
@@ -60,7 +57,6 @@ Router::post('/auth/login', function() {
 
     try {
         $pdo = get_pdo();
-        // lee `password` texto plano
         $q = $pdo->prepare('SELECT id_usuarios, nombre_completo, fecha_nacimiento, email, sexo, foto_perfil, fecha_registro, diagnostico_previo, password
                             FROM usuarios WHERE email = ? LIMIT 1');
         $q->execute([$email]);

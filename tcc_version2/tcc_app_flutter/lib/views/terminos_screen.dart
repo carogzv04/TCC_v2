@@ -30,7 +30,7 @@ class TerminosScreen extends StatelessWidget {
               SizedBox(height: 16),
 
               Text(
-                'Última actualización: Octubre 2025\n',
+                'Última actualización: Noviembre 2025\n',
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
 

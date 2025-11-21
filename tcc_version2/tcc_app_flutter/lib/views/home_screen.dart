@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../viewmodels/usuario_viewmodel.dart';
 import '../utils/session_manager.dart';
-import '../services/terminos_service.dart'; // ← NUEVO
+import '../services/terminos_service.dart';
+import '../utils/sheets.dart';
 import 'mis_tests_screen.dart';
 import 'perfil_screen.dart';
 import 'test_screen.dart';
@@ -23,10 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _cargarUsuario();
 
-    // Mostrar términos solo si nunca aceptó
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final acepto = await TerminosService.usuarioAcepto();
-      if (!acepto) {
+      if (!acepto && mounted) {
         _mostrarTerminos();
       }
     });
@@ -46,56 +46,46 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ----------------------------------------------------
-  // MODAL DE TÉRMINOS Y CONDICIONES
-  // ----------------------------------------------------
   void _mostrarTerminos() {
-    showModalBottomSheet(
+    showAppSheet(
       context: context,
-      isDismissible: false,
-      enableDrag: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: const Color(0xFFF6F7D7),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.verified_user,
-                  size: 50, color: Color(0xFF3EC1D3)),
-              const SizedBox(height: 10),
-
-              const Text(
-                "Términos y Condiciones",
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3EC1D3)),
+              const Icon(
+                Icons.verified_user,
+                size: 50,
+                color: Color(0xFF3EC1D3),
               ),
               const SizedBox(height: 10),
-
               const Text(
-                "Para continuar usando la aplicación, debés aceptar los Términos y Condiciones sobre el uso del sistema y el tratamiento de datos.",
+                'Términos y Condiciones',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF3EC1D3),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Para continuar usando la aplicación, debés aceptar los Términos y Condiciones sobre el uso del sistema y el tratamiento de datos.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16),
               ),
-
               const SizedBox(height: 20),
-
-              // Botón para LEER los términos
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const TerminosScreen()),
+                    MaterialPageRoute(builder: (_) => const TerminosScreen()),
                   );
                 },
                 child: const Text(
-                  "Leer Términos y Condiciones",
+                  'Leer Términos y Condiciones',
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF3EC1D3),
@@ -103,9 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 10),
-
               Row(
                 children: [
                   Expanded(
@@ -117,8 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.of(context).pop();
                         _cerrarSesion();
                       },
-                      child: const Text("No acepto",
-                          style: TextStyle(color: Colors.red)),
+                      child: const Text(
+                        'No acepto',
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -130,21 +120,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onPressed: () async {
                         await TerminosService.guardarAceptado();
-                        Navigator.of(context).pop();
+                        if (context.mounted) Navigator.of(context).pop();
                       },
-                      child: const Text("Acepto"),
+                      child: const Text('Acepto'),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  // ----------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final usuarioVM = Provider.of<UsuarioViewModel>(context);
@@ -156,8 +145,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Inicio'),
         foregroundColor: Colors.white,
       ),
-
-      // MENU LATERAL
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -177,10 +164,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             ListTile(
-              leading: Icon(Icons.assignment,
-                  color: Theme.of(context).colorScheme.primary),
+              leading: Icon(
+                Icons.assignment,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: const Text('Mis tests'),
               onTap: () {
                 Navigator.push(
@@ -189,10 +177,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
             ListTile(
-              leading: Icon(Icons.person,
-                  color: Theme.of(context).colorScheme.primary),
+              leading: Icon(
+                Icons.person,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: const Text('Perfil'),
               onTap: () {
                 Navigator.push(
@@ -201,10 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
             ListTile(
-              leading: Icon(Icons.description,
-                  color: Theme.of(context).colorScheme.primary),
+              leading: Icon(
+                Icons.description,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               title: const Text('Términos y Condiciones (LGPD)'),
               onTap: () {
                 Navigator.pop(context);
@@ -214,94 +204,89 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-
             const Divider(),
-
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Cerrar sesión',
-                  style: TextStyle(color: Colors.red)),
+              title: const Text(
+                'Cerrar sesión',
+                style: TextStyle(color: Colors.red),
+              ),
               onTap: _cerrarSesion,
             ),
           ],
         ),
       ),
-
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '¡Bienvenido, ${usuarioVM.nombreCompleto ?? 'Usuario'}!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                '¡Bienvenido, ${usuarioVM.nombreCompleto ?? 'Usuario'}!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              const Text(
+                'Selecciona una opción para continuar:',
+                style: TextStyle(fontSize: 16, color: Colors.black87),
+              ),
+              const SizedBox(height: 40),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TestScreen()),
+                  );
+                },
+                icon: const Icon(Icons.quiz),
+                label: const Text('Realizar nuevo test'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MisTestsScreen()),
+                  );
+                },
+                icon: const Icon(Icons.history),
+                label: const Text('Ver tests realizados'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(
                     color: Theme.of(context).colorScheme.primary,
+                    width: 2,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Selecciona una opción para continuar:',
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
-                ),
-                const SizedBox(height: 40),
-
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TestScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.quiz),
-                  label: const Text('Realizar nuevo test'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 14),
-                    textStyle: const TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                const SizedBox(height: 20),
-
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MisTestsScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.history),
-                  label: const Text('Ver tests realizados'),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                    foregroundColor:
-                        Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 14),
-                    textStyle: const TextStyle(fontSize: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

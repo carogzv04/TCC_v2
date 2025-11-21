@@ -9,16 +9,11 @@ class UsuarioViewModel extends ChangeNotifier {
   String? token;
   bool isLoggedIn = false;
 
-  // nuevos (opcionales)
-  String? fechaNacimiento;      // "YYYY-MM-DD"
-  String? sexo;                 // "M" | "F" | "O" | null
-  String? diagnosticoPrevio;    // texto o null
-  String? fotoPerfil;           // url/base64 opcional
-  String? fechaRegistro;        // timestamp opcional
-
-  // =====================================================
-  // CARGAR / GUARDAR SESIÓN
-  // =====================================================
+  String? fechaNacimiento;     
+  String? sexo;                
+  String? diagnosticoPrevio;   
+  String? fotoPerfil;           
+  String? fechaRegistro;        
 
   Future<void> cargarUsuario() async {
     final session = await SessionManager.getSession();
@@ -29,7 +24,6 @@ class UsuarioViewModel extends ChangeNotifier {
       token             = session['token'];
       isLoggedIn        = session['isLoggedIn'] ?? false;
 
-      // opcionales si existen en sesión
       fechaNacimiento   = session['fecha_nacimiento'];
       sexo              = session['sexo'];
       diagnosticoPrevio = session['diagnostico_previo'];
@@ -81,10 +75,6 @@ class UsuarioViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // =====================================================
-  // 🔄 ACTUALIZAR PERFIL DESDE EL BACKEND
-  // =====================================================
-
   Future<void> actualizarPerfilDesdeBackend() async {
     if (usuarioId == null) return;
 
@@ -94,7 +84,6 @@ class UsuarioViewModel extends ChangeNotifier {
       if (response['success'] == true && response['data'] != null) {
         final data = response['data'];
 
-        // Actualiza los valores locales con los datos del backend
         nombreCompleto    = data['nombre_completo'];
         email             = data['email'];
         fechaNacimiento   = data['fecha_nacimiento'];
@@ -103,7 +92,6 @@ class UsuarioViewModel extends ChangeNotifier {
         fotoPerfil        = data['foto_perfil'];
         fechaRegistro     = data['fecha_registro'];
 
-        // Guarda también la nueva sesión
         await SessionManager.saveSession({
           'usuario_id': usuarioId,
           'nombre_completo': nombreCompleto,
@@ -117,12 +105,12 @@ class UsuarioViewModel extends ChangeNotifier {
         });
 
         notifyListeners();
-        debugPrint('✅ Perfil actualizado desde backend correctamente');
+        
       } else {
-        debugPrint('⚠️ No se pudo actualizar perfil: ${response['message']}');
+
       }
     } catch (e) {
-      debugPrint('❌ Error al actualizar perfil desde backend: $e');
+
     }
   }
 }

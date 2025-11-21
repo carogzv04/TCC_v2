@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'utils/session_manager.dart';
 
 import 'viewmodels/usuario_viewmodel.dart';
 import 'viewmodels/test_viewmodel.dart';
@@ -19,13 +18,7 @@ void main() async {
 
   final usuarioViewModel = UsuarioViewModel();
   await usuarioViewModel.cargarUsuario();
-
   final isLogged = usuarioViewModel.isLoggedIn;
-
-  print('🚀 [main.dart] Sesión cargada al iniciar: '
-      'isLogged=$isLogged, '
-      'id=${usuarioViewModel.usuarioId}, '
-      'nombre=${usuarioViewModel.nombreCompleto}');
 
   runApp(
     MultiProvider(
@@ -47,7 +40,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TCC App',
-
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -59,18 +51,17 @@ class MyApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       locale: const Locale('es', 'ES'),
-
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF6F7D7), // fondo beige claro
+        scaffoldBackgroundColor: const Color(0xFFF6F7D7),
         colorScheme: const ColorScheme(
           brightness: Brightness.light,
-          primary: Color(0xFF3EC1D3), // azul principal
+          primary: Color(0xFF3EC1D3),
           onPrimary: Colors.white,
-          secondary: Color(0xFFFF9A00), // naranja acento
+          secondary: Color(0xFFFF9A00),
           onSecondary: Colors.white,
-          error: Color(0xFFFF165D), // rojo alerta
+          error: Color(0xFFFF165D),
           onError: Colors.white,
-          background: Color(0xFFF6F7D7), // fondo base
+          background: Color(0xFFF6F7D7),
           onBackground: Colors.black,
           surface: Colors.white,
           onSurface: Colors.black87,
@@ -84,26 +75,18 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF3EC1D3),
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
+            shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: Color(0xFF3EC1D3), width: 2),
             foregroundColor: const Color(0xFF3EC1D3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
@@ -121,11 +104,15 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      home: SafeArea(
-        child: isLogged ? const 
-        HomeScreen() : const WelcomeScreen(),
-        ), 
+      builder: (context, child) {
+        return SafeArea(
+          top: false,
+          bottom: true,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
 
+      home: isLogged ? const HomeScreen() : const WelcomeScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/registro': (context) => const RegisterScreen(),

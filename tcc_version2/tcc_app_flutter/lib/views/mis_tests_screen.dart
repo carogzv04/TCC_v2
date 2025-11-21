@@ -26,14 +26,12 @@ class _MisTestsScreenState extends State<MisTestsScreen> {
 
     try {
       final tests = await ApiService().fetchMisTests(usuario.usuarioId ?? 0);
-      debugPrint('📥 Lista mis-tests (len=${tests.length}): $tests');
 
       setState(() {
         _tests = tests;
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('❌ Error cargando tests: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -53,104 +51,103 @@ class _MisTestsScreenState extends State<MisTestsScreen> {
               child: CircularProgressIndicator(color: Color(0xFF3EC1D3)),
             )
           : _tests.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No tienes tests realizados aún.',
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  itemCount: _tests.length,
-                  itemBuilder: (context, index) {
-                    final Map<String, dynamic> test = _tests[index];
+          ? const Center(
+              child: Text(
+                'No tienes tests realizados aún.',
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: _tests.length,
+              itemBuilder: (context, index) {
+                final Map<String, dynamic> test = _tests[index];
 
-                    // Función de navegación reutilizable
-                    void navegarAlDetalle() {
-                      final int idRpu =
-                          (test['id_rpu'] as num?)?.toInt() ??
-                          int.tryParse('${test['id_rpu']}') ??
-                          0;
+                void navegarAlDetalle() {
+                  final int idRpu =
+                      (test['id_rpu'] as num?)?.toInt() ??
+                      int.tryParse('${test['id_rpu']}') ??
+                      0;
 
-                      if (idRpu > 0) {
-                        debugPrint('🟢 Abriendo detalle del test ID $idRpu');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => DetalleTestScreen(idRpu: idRpu),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('ID del test inválido.'),
-                            backgroundColor: Color(0xFFFF165D),
-                          ),
-                        );
-                        debugPrint(
-                            '⚠️ ID del test no válido: ${test['id_rpu']} | test=$test');
-                      }
-                    }
-
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: navegarAlDetalle,
-                      child: Card(
-                        elevation: 4,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          leading: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF3EC1D3),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.all(8),
-                            child: const Icon(
-                              Icons.assessment,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                          ),
-                          title: Text(
-                            test['nombre_test']?.toString() ??
-                                'Test sin nombre',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF3EC1D3),
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 6),
-                              Text(
-                                'Fecha: ${test['fecha']?.toString() ?? 'Desconocida'}',
-                                style: const TextStyle(color: Colors.black87),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Resultado: ${test['resultado']?.toString().isNotEmpty == true ? test['resultado'] : 'Pendiente'}',
-                                style: const TextStyle(
-                                  color: Color(0xFFFF9A00),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color(0xFF3EC1D3),
-                          ),
-                        ),
+                  if (idRpu > 0) {
+                    debugPrint('🟢 Abriendo detalle del test ID $idRpu');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DetalleTestScreen(idRpu: idRpu),
                       ),
                     );
-                  },
-                ),
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('ID del test inválido.'),
+                        backgroundColor: Color(0xFFFF165D),
+                      ),
+                    );
+                    debugPrint(
+                      'ID del test no válido: ${test['id_rpu']} | test=$test',
+                    );
+                  }
+                }
+
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: navegarAlDetalle,
+                  child: Card(
+                    elevation: 4,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    color: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3EC1D3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.assessment,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                      title: Text(
+                        test['nombre_test']?.toString() ?? 'Test sin nombre',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF3EC1D3),
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 6),
+                          Text(
+                            'Fecha: ${test['fecha']?.toString() ?? 'Desconocida'}',
+                            style: const TextStyle(color: Colors.black87),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Resultado: ${test['resultado']?.toString().isNotEmpty == true ? test['resultado'] : 'Pendiente'}',
+                            style: const TextStyle(
+                              color: Color(0xFFFF9A00),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Color(0xFF3EC1D3),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }

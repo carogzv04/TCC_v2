@@ -7,12 +7,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ---- Configuración global ----
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/core/helpers.php';
 require_once __DIR__ . '/core/router.php';
 
-// ---- Definición de rutas ----
 Router::get('/', function() {
     json_response(true, 'API TCC Caro en funcionamiento', [
         'server_time' => date('Y-m-d H:i:s'),
@@ -30,7 +28,6 @@ Router::get('/', function() {
     ]);
 });
 
-// Cargar módulos de rutas
 require_once __DIR__ . '/routes/auth.php';
 require_once __DIR__ . '/routes/usuario.php';
 require_once __DIR__ . '/routes/tests.php';
@@ -38,5 +35,4 @@ require_once __DIR__ . '/routes/resultados.php';
 require_once __DIR__ . '/routes/recomendaciones.php';
 
 
-// ---- Ejecutar enrutamiento ----
 Router::dispatch();

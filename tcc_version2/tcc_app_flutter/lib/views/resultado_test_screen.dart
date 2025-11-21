@@ -23,7 +23,6 @@ class ResultadoTestScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
 
-    // ✅ Tamaño reducido y responsivo
     final chartSize = orientation == Orientation.portrait
         ? size.width * 0.48
         : size.height * 0.38;
@@ -120,18 +119,17 @@ class ResultadoTestScreen extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 'Promedio general: ${porcentajeTotal.toStringAsFixed(1)}%',
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.black54,
-                ),
+                style: const TextStyle(fontSize: 15, color: Colors.black54),
               ),
 
               const SizedBox(height: 25),
 
               ElevatedButton.icon(
                 onPressed: () {
-                  final usuario =
-                      Provider.of<UsuarioViewModel>(context, listen: false);
+                  final usuario = Provider.of<UsuarioViewModel>(
+                    context,
+                    listen: false,
+                  );
                   if (usuario.usuarioId != null) {
                     Navigator.push(
                       context,
@@ -142,8 +140,9 @@ class ResultadoTestScreen extends StatelessWidget {
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('Error: No se encontró el usuario logueado'),
+                        content: Text(
+                          'Error: No se encontró el usuario logueado',
+                        ),
                       ),
                     );
                   }

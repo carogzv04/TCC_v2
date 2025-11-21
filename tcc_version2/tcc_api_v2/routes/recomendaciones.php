@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../db.php';
 
+/** GET /recomendaciones/usuario */
 Router::get('/recomendaciones/usuario', function() {
     $usuarioId = isset($_GET['id_usuario']) ? (int)$_GET['id_usuario'] : 0;
     $ruIdParam = isset($_GET['ru_id']) ? (int)$_GET['ru_id'] : 0;
@@ -12,9 +13,7 @@ Router::get('/recomendaciones/usuario', function() {
     try {
         $pdo = get_pdo();
 
-        // 1) Determinar qué ru_id usar (el que viene por query o el último del usuario)
         if ($ruIdParam > 0) {
-            // Validar que el ru_id pertenezca al usuario
             $val = $pdo->prepare("SELECT 1 FROM respuestas_usuario WHERE id_rpu = ? AND usuario_id = ? LIMIT 1");
             $val->execute([$ruIdParam, $usuarioId]);
             if (!$val->fetchColumn()) {
@@ -37,7 +36,6 @@ Router::get('/recomendaciones/usuario', function() {
             $ruId = (int)$ultima['id_rpu'];
         }
 
-        // 2) Traer los ganadores de ese ru_id
         $d = $pdo->prepare("
             SELECT ganador
             FROM resultado_dimension
@@ -96,7 +94,7 @@ Router::get('/recomendaciones/usuario', function() {
         ], 200);
 
     } catch (Throwable $e) {
-        error_log("❌ Error en /recomendaciones/usuario: " . $e->getMessage());
+        error_log("Error en /recomendaciones/usuario: " . $e->getMessage());
         json_response(false, 'Error interno al obtener recomendaciones', null, 500);
     }
 });

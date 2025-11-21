@@ -1,13 +1,9 @@
 <?php
-// ============================================
-//  core/router.php
-//  Clase Router sencilla para manejar rutas REST
-// ============================================
+// Clase Router para manejar rutas REST
 
 class Router {
     private static array $routes = [];
 
-    // --- Registro de rutas ---
     public static function get(string $path, callable $handler): void {
         self::$routes['GET'][$path] = $handler;
     }
@@ -24,7 +20,6 @@ class Router {
         self::$routes['DELETE'][$path] = $handler;
     }
 
-    // --- Ejecución del enrutamiento ---
     public static function dispatch(): void {
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

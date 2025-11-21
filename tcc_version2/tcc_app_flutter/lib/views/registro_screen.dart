@@ -82,7 +82,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (seleccion != null) {
       _fechaCtrl.text =
-      '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
+          '${seleccion.year}-${_dosDigitos(seleccion.month)}-${_dosDigitos(seleccion.day)}';
     }
   }
 
@@ -91,10 +91,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true, // ✅ se ajusta al teclado
-      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xFFF6F7D7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
+        backgroundColor: const Color(0xFF3EC1D3),
         elevation: 0,
         title: const Text('Registro de usuario'),
         centerTitle: true,
@@ -102,26 +102,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       body: SafeArea(
         child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(), // 👈 cierra teclado al tocar fuera
+          onTap: () => FocusScope.of(context).unfocus(),
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
-                  // ===== TÍTULO =====
                   const Text(
                     'Crear nueva cuenta',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF3EC1D3), // ✅ azul principal
+                      color: Color(0xFF3EC1D3),
                     ),
                   ),
                   const SizedBox(height: 25),
 
-                  // ===== CAMPOS =====
                   TextFormField(
                     controller: _nombreCtrl,
                     decoration: const InputDecoration(
@@ -159,8 +157,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       border: OutlineInputBorder(),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Ingresá una contraseña';
-                      if (v.length < 6) return 'Debe tener al menos 6 caracteres';
+                      if (v == null || v.isEmpty)
+                        return 'Ingresá una contraseña';
+                      if (v.length < 6)
+                        return 'Debe tener al menos 6 caracteres';
                       return null;
                     },
                   ),
@@ -172,8 +172,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Fecha de nacimiento',
                       border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.calendar_today,
-                          color: Color(0xFF3EC1D3)),
+                      prefixIcon: const Icon(
+                        Icons.calendar_today,
+                        color: Color(0xFF3EC1D3),
+                      ),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.event, color: Color(0xFF3EC1D3)),
                         onPressed: _seleccionarFecha,
@@ -192,8 +194,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Femenino', child: Text('Femenino')),
-                      DropdownMenuItem(value: 'Masculino', child: Text('Masculino')),
+                      DropdownMenuItem(
+                        value: 'Femenino',
+                        child: Text('Femenino'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Masculino',
+                        child: Text('Masculino'),
+                      ),
                       DropdownMenuItem(value: 'Otro', child: Text('Otro')),
                     ],
                     onChanged: (value) =>
@@ -208,25 +216,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Diagnóstico previo',
-                      prefixIcon:
-                          Icon(Icons.local_hospital, color: Color(0xFF3EC1D3)),
+                      prefixIcon: Icon(
+                        Icons.local_hospital,
+                        color: Color(0xFF3EC1D3),
+                      ),
                       border: OutlineInputBorder(),
                     ),
                     items: _diagnosticos
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d,
-                        overflow: TextOverflow.ellipsis, 
-                        maxLines: 1, 
-                        style: const TextStyle(fontSize: 14))))
+                        .map(
+                          (d) => DropdownMenuItem(
+                            value: d,
+                            child: Text(
+                              d,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (value) =>
                         setState(() => _diagnosticoSeleccionado = value),
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Seleccioná una opción'
-                        : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Seleccioná una opción' : null,
                   ),
                   const SizedBox(height: 30),
 
-                
                   _loading
                       ? const CircularProgressIndicator(
                           color: Color(0xFF3EC1D3),
@@ -246,7 +261,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                   const SizedBox(height: 15),
 
-                  // ===== ENLACE A LOGIN =====
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/login');
@@ -254,7 +268,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: const Text(
                       '¿Ya tenés cuenta? Iniciá sesión',
                       style: TextStyle(
-                        color: Color(0xFFFF9A00), // ✅ acento naranja
+                        color: Color(0xFFFF9A00),
                         fontWeight: FontWeight.w600,
                       ),
                     ),

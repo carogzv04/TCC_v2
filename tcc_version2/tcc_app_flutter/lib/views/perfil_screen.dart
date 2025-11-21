@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
+
 import '../viewmodels/usuario_viewmodel.dart';
 import '../utils/session_manager.dart';
+import '../utils/sheets.dart';
+
 import 'perfil_edit_screen.dart';
 import 'login_screen.dart';
-import 'mis_tests_screen.dart';
-import 'test_screen.dart';
-import '../services/terminos_service.dart'; // por si lo usás más adelante
-import 'perfil_screen.dart';
-import 'perfil_edit_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
@@ -19,12 +17,10 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
-
   @override
   void initState() {
     super.initState();
     final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (usuario.isLoggedIn && (usuario.usuarioId ?? 0) > 0) {
         usuario.actualizarPerfilDesdeBackend();
@@ -32,9 +28,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
     });
   }
 
-  // ==============================
-  //   CERRAR SESIÓN
-  // ==============================
   Future<void> _cerrarSesion() async {
     await SessionManager.logoutKeepData();
     if (!mounted) return;
@@ -45,33 +38,25 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  // ==============================
-  //   MOSTRAR ERROR
-  // ==============================
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   Future<void> _eliminarCuenta() async {
     final usuarioVM = Provider.of<UsuarioViewModel>(context, listen: false);
     final id = usuarioVM.usuarioId;
     if (id == null) {
-      _mostrarError("No se pudo obtener tu ID de usuario.");
+      _mostrarError('No se pudo obtener tu ID de usuario.');
       return;
     }
-
     try {
-      
       final dio = Dio();
-      final response =
-          await dio.delete("https://localhost:8080/tcc_api_v2/usuario/eliminar?id_usuario=$id");
-
-      if (response.statusCode == 200 && response.data["success"] == true) {
+      final response = await dio.delete(
+        'http://186.208.144.167:8080/tcc_api_v2/usuario/eliminar?id_usuario=$id',
+      );
+      if (response.statusCode == 200 && response.data['success'] == true) {
         await SessionManager.logoutKeepData();
         if (!mounted) return;
         Navigator.pushAndRemoveUntil(
@@ -80,90 +65,77 @@ class _PerfilScreenState extends State<PerfilScreen> {
           (route) => false,
         );
       } else {
-        _mostrarError("No se pudo eliminar la cuenta.");
+        _mostrarError('No se pudo eliminar la cuenta.');
       }
-    } catch (e) {
-      _mostrarError("Error al conectar con el servidor.");
+    } catch (_) {
+      _mostrarError('Error al conectar con el servidor.');
     }
   }
 
-  // ==============================
-  //   MODAL DE CONFIRMACIÓN
-  // ==============================
   void _confirmarEliminacionCuenta() {
-    showModalBottomSheet(
+    showAppSheet(
       context: context,
-      isDismissible: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      backgroundColor: const Color(0xFFF6F7D7),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning_amber_rounded,
-                  size: 60, color: Colors.red),
-              const SizedBox(height: 10),
-
-              const Text(
-                "¿Eliminar cuenta?",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
+      isScrollControlled: false,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              size: 60,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '¿Eliminar cuenta?',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Esta acción eliminará todos tus datos, historial de tests y perfil de la base de datos. '
+              'Esta operación es irreversible.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.grey),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancelar'),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-
-              const Text(
-                "Esta acción eliminará todos tus datos, historial de tests y perfil de la base de datos. "
-                "Esta operación es irreversible.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-
-              const SizedBox(height: 20),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.grey),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Cancelar"),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
                     ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _eliminarCuenta();
+                    },
+                    child: const Text('Eliminar'),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _eliminarCuenta();
-                      },
-                      child: const Text("Eliminar"),
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        );
-      },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  // ==============================
-  //   BUILD
-  // ==============================
   @override
   Widget build(BuildContext context) {
     final usuario = Provider.of<UsuarioViewModel>(context);
@@ -179,8 +151,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
       body: usuario.isLoggedIn
           ? Center(
               child: SingleChildScrollView(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 30.0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -190,7 +164,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       child: Icon(Icons.person, size: 70, color: Colors.white),
                     ),
                     const SizedBox(height: 20),
-
                     Text(
                       usuario.nombreCompleto ?? 'Nombre no disponible',
                       style: const TextStyle(
@@ -201,7 +174,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-
                     Text(
                       usuario.email ?? 'Correo no disponible',
                       style: const TextStyle(
@@ -210,44 +182,39 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
                     _buildInfoTile(
                       icon: Icons.cake,
                       label: 'Fecha de nacimiento',
-                      value: usuario.fechaNacimiento?.isNotEmpty == true
+                      value: (usuario.fechaNacimiento?.isNotEmpty ?? false)
                           ? usuario.fechaNacimiento!
                           : 'No especificada',
                     ),
                     _buildInfoTile(
                       icon: Icons.wc,
                       label: 'Sexo',
-                      value: usuario.sexo?.isNotEmpty == true
+                      value: (usuario.sexo?.isNotEmpty ?? false)
                           ? (usuario.sexo == 'M'
-                              ? 'Masculino'
-                              : usuario.sexo == 'F'
-                                  ? 'Femenino'
-                                  : 'Otro')
+                                ? 'Masculino'
+                                : usuario.sexo == 'F'
+                                ? 'Femenino'
+                                : 'Otro')
                           : 'No especificado',
                     ),
                     _buildInfoTile(
                       icon: Icons.medical_information,
                       label: 'Diagnóstico previo',
-                      value: usuario.diagnosticoPrevio?.isNotEmpty == true
+                      value: (usuario.diagnosticoPrevio?.isNotEmpty ?? false)
                           ? usuario.diagnosticoPrevio!
                           : 'No registrado',
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ==========================
-                    //  BOTÓN EDITAR PERFIL
-                    // ==========================
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (_) => const PerfilEditScreen()),
+                            builder: (_) => const PerfilEditScreen(),
+                          ),
                         );
                       },
                       icon: const Icon(Icons.edit),
@@ -256,7 +223,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         backgroundColor: const Color(0xFF3EC1D3),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 40, vertical: 14),
+                          horizontal: 40,
+                          vertical: 14,
+                        ),
                         textStyle: const TextStyle(fontSize: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -264,15 +233,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         elevation: 4,
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ==========================
-                    //  ELIMINAR CUENTA
-                    // ==========================
                     ListTile(
-                      leading:
-                          const Icon(Icons.delete_forever, color: Colors.red),
+                      leading: const Icon(
+                        Icons.delete_forever,
+                        color: Colors.red,
+                      ),
                       title: const Text(
                         'Eliminar mi cuenta permanentemente',
                         style: TextStyle(color: Colors.red),
@@ -292,9 +258,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  // ==========================
-  // TILE AUXILIAR
-  // ==========================
   Widget _buildInfoTile({
     required IconData icon,
     required String label,
@@ -307,11 +270,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
@@ -322,13 +281,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style:
-                        const TextStyle(color: Colors.black54, fontSize: 14)),
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.black54, fontSize: 14),
+                ),
                 const SizedBox(height: 4),
-                Text(value,
-                    style:
-                        const TextStyle(color: Colors.black87, fontSize: 16)),
+                Text(
+                  value,
+                  style: const TextStyle(color: Colors.black87, fontSize: 16),
+                ),
               ],
             ),
           ),
