@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../viewmodels/usuario_viewmodel.dart';
 import '../utils/session_manager.dart';
+import '../services/terminos_service.dart'; // ← NUEVO
 import 'mis_tests_screen.dart';
 import 'perfil_screen.dart';
 import 'test_screen.dart';
 import 'login_screen.dart';
-import 'terminos_screen.dart'; // ✅ nueva importación
+import 'terminos_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +22,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _cargarUsuario();
+
+    // Mostrar términos solo si nunca aceptó
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final acepto = await TerminosService.usuarioAcepto();
+      if (!acepto) {
+        _mostrarTerminos();
+      }
+    });
   }
 
   Future<void> _cargarUsuario() async {
@@ -36,6 +46,105 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ----------------------------------------------------
+  // MODAL DE TÉRMINOS Y CONDICIONES
+  // ----------------------------------------------------
+  void _mostrarTerminos() {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: const Color(0xFFF6F7D7),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.verified_user,
+                  size: 50, color: Color(0xFF3EC1D3)),
+              const SizedBox(height: 10),
+
+              const Text(
+                "Términos y Condiciones",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3EC1D3)),
+              ),
+              const SizedBox(height: 10),
+
+              const Text(
+                "Para continuar usando la aplicación, debés aceptar los Términos y Condiciones sobre el uso del sistema y el tratamiento de datos.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Botón para LEER los términos
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const TerminosScreen()),
+                  );
+                },
+                child: const Text(
+                  "Leer Términos y Condiciones",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF3EC1D3),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _cerrarSesion();
+                      },
+                      child: const Text("No acepto",
+                          style: TextStyle(color: Colors.red)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3EC1D3),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () async {
+                        await TerminosService.guardarAceptado();
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text("Acepto"),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ----------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final usuarioVM = Provider.of<UsuarioViewModel>(context);
@@ -48,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
       ),
 
-      // ====== MENÚ LATERAL (DRAWER) ======
+      // MENU LATERAL
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -69,7 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // === Mis Tests ===
             ListTile(
               leading: Icon(Icons.assignment,
                   color: Theme.of(context).colorScheme.primary),
@@ -82,7 +190,6 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-            // === Perfil ===
             ListTile(
               leading: Icon(Icons.person,
                   color: Theme.of(context).colorScheme.primary),
@@ -95,13 +202,12 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-            // === Términos y Condiciones ===
             ListTile(
               leading: Icon(Icons.description,
                   color: Theme.of(context).colorScheme.primary),
               title: const Text('Términos y Condiciones (LGPD)'),
               onTap: () {
-                Navigator.pop(context); // cierra el drawer
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const TerminosScreen()),
@@ -111,21 +217,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const Divider(),
 
-            // === Cerrar sesión ===
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Cerrar sesión',
-                style: TextStyle(color: Colors.red),
-              ),
+              title: const Text('Cerrar sesión',
+                  style: TextStyle(color: Colors.red)),
               onTap: _cerrarSesion,
             ),
           ],
         ),
       ),
 
-      // ====== CONTENIDO PRINCIPAL ======
-      body: SafeArea( // ✅ añadido para evitar que el contenido quede debajo de la barra
+      body: SafeArea(
         child: Center(
           child: Padding(
             padding:
@@ -150,7 +252,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // ====== BOTÓN PRINCIPAL ======
                 ElevatedButton.icon(
                   onPressed: () {
                     Navigator.push(
@@ -175,7 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // ====== BOTÓN SECUNDARIO ======
                 OutlinedButton.icon(
                   onPressed: () {
                     Navigator.push(

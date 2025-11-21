@@ -283,3 +283,55 @@ Router::post('/usuario/modificar', function() {
         json_response(false, 'Error al actualizar perfil: ' . $e->getMessage(), null, 500);
     }
 });
+
+// ============================================
+//   DELETE /usuario/eliminar?id_usuario=123
+// ============================================
+Router::delete('/usuario/eliminar', function () {
+    require_once __DIR__ . '/../db.php';
+    $pdo = get_pdo();
+
+    $usuarioId = isset($_GET['id_usuario']) ? (int)$_GET['id_usuario'] : 0;
+
+    if ($usuarioId <= 0) {
+        json_response(false, "Falta el parámetro id_usuario.", null, 400);
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        // 1. Buscar todos los ru_id (respuestas_usuario) del usuario
+        $stmt = $pdo->prepare("SELECT id_rpu FROM respuestas_usuario WHERE usuario_id = ?");
+        $stmt->execute([$usuarioId]);
+        $ru_list = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        // 2. Eliminar detalle_respuestas por cada ru_id
+        if (!empty($ru_list)) {
+            $delDetalle = $pdo->prepare("DELETE FROM detalle_respuestas WHERE ru_id = ?");
+            foreach ($ru_list as $ruId) {
+                $delDetalle->execute([$ruId]);
+            }
+        }
+
+        // 3. Eliminar respuestas_usuario
+        $delRu = $pdo->prepare("DELETE FROM respuestas_usuario WHERE usuario_id = ?");
+        $delRu->execute([$usuarioId]);
+
+        // 4. Eliminar resultados_usuario
+        $delRes = $pdo->prepare("DELETE FROM resultados_usuario WHERE usuario_id = ?");
+        $delRes->execute([$usuarioId]);
+
+        // 5. Finalmente eliminar el usuario
+        $delUsuario = $pdo->prepare("DELETE FROM usuarios WHERE id_usuarios = ?");
+        $delUsuario->execute([$usuarioId]);
+
+        $pdo->commit();
+
+        json_response(true, "Cuenta eliminada correctamente.", null, 200);
+
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        error_log("❌ Error al eliminar usuario $usuarioId: " . $e->getMessage());
+        json_response(false, "Error interno al eliminar la cuenta.", null, 500);
+    }
+});

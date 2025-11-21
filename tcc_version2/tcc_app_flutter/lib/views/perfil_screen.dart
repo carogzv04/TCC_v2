@@ -1,32 +1,177 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
 import '../viewmodels/usuario_viewmodel.dart';
+import '../utils/session_manager.dart';
+import 'perfil_edit_screen.dart';
+import 'login_screen.dart';
+import 'mis_tests_screen.dart';
+import 'test_screen.dart';
+import '../services/terminos_service.dart'; // por si lo usás más adelante
+import 'perfil_screen.dart';
 import 'perfil_edit_screen.dart';
 
-class PerfilScreen extends StatelessWidget {
+class PerfilScreen extends StatefulWidget {
   const PerfilScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    
-    final usuario = Provider.of<UsuarioViewModel>(context);
+  State<PerfilScreen> createState() => _PerfilScreenState();
+}
+
+class _PerfilScreenState extends State<PerfilScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    final usuario = Provider.of<UsuarioViewModel>(context, listen: false);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (usuario.isLoggedIn && (usuario.usuarioId ?? 0) > 0) {
         usuario.actualizarPerfilDesdeBackend();
       }
     });
+  }
 
-  print('👤 [PerfilScreen] Estado actual del usuario: '
-      'isLoggedIn=${usuario.isLoggedIn}, '
-      'id=${usuario.usuarioId}, '
-      'nombre=${usuario.nombreCompleto}, '
-      'email=${usuario.email}');
+  // ==============================
+  //   CERRAR SESIÓN
+  // ==============================
+  Future<void> _cerrarSesion() async {
+    await SessionManager.logoutKeepData();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  // ==============================
+  //   MOSTRAR ERROR
+  // ==============================
+  void _mostrarError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _eliminarCuenta() async {
+    final usuarioVM = Provider.of<UsuarioViewModel>(context, listen: false);
+    final id = usuarioVM.usuarioId;
+    if (id == null) {
+      _mostrarError("No se pudo obtener tu ID de usuario.");
+      return;
+    }
+
+    try {
       
-    
-  return Scaffold(
-      backgroundColor: const Color(0xFFF6F7D7), // ✅ fondo beige claro
+      final dio = Dio();
+      final response =
+          await dio.delete("https://localhost:8080/tcc_api_v2/usuario/eliminar?id_usuario=$id");
+
+      if (response.statusCode == 200 && response.data["success"] == true) {
+        await SessionManager.logoutKeepData();
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false,
+        );
+      } else {
+        _mostrarError("No se pudo eliminar la cuenta.");
+      }
+    } catch (e) {
+      _mostrarError("Error al conectar con el servidor.");
+    }
+  }
+
+  // ==============================
+  //   MODAL DE CONFIRMACIÓN
+  // ==============================
+  void _confirmarEliminacionCuenta() {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: const Color(0xFFF6F7D7),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  size: 60, color: Colors.red),
+              const SizedBox(height: 10),
+
+              const Text(
+                "¿Eliminar cuenta?",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              const Text(
+                "Esta acción eliminará todos tus datos, historial de tests y perfil de la base de datos. "
+                "Esta operación es irreversible.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.grey),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancelar"),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _eliminarCuenta();
+                      },
+                      child: const Text("Eliminar"),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ==============================
+  //   BUILD
+  // ==============================
+  @override
+  Widget build(BuildContext context) {
+    final usuario = Provider.of<UsuarioViewModel>(context);
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F7D7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
+        backgroundColor: const Color(0xFF3EC1D3),
         title: const Text('Mi Perfil'),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -39,28 +184,24 @@ class PerfilScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // ===== Avatar =====
                     const CircleAvatar(
                       radius: 60,
-                      backgroundColor: Color(0xFF3EC1D3), // ✅ azul principal
-                      child:
-                          Icon(Icons.person, size: 70, color: Colors.white),
+                      backgroundColor: Color(0xFF3EC1D3),
+                      child: Icon(Icons.person, size: 70, color: Colors.white),
                     ),
                     const SizedBox(height: 20),
 
-                    // ===== Nombre =====
                     Text(
                       usuario.nombreCompleto ?? 'Nombre no disponible',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF3EC1D3), // ✅ azul principal
+                        color: Color(0xFF3EC1D3),
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
 
-                    // ===== Email =====
                     Text(
                       usuario.email ?? 'Correo no disponible',
                       style: const TextStyle(
@@ -70,7 +211,6 @@ class PerfilScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
 
-                    // ===== Datos adicionales =====
                     _buildInfoTile(
                       icon: Icons.cake,
                       label: 'Fecha de nacimiento',
@@ -99,7 +239,9 @@ class PerfilScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // ===== Botón para editar =====
+                    // ==========================
+                    //  BOTÓN EDITAR PERFIL
+                    // ==========================
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
@@ -111,7 +253,7 @@ class PerfilScreen extends StatelessWidget {
                       icon: const Icon(Icons.edit),
                       label: const Text('Editar perfil'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3EC1D3), // ✅ azul principal
+                        backgroundColor: const Color(0xFF3EC1D3),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 40, vertical: 14),
@@ -121,6 +263,21 @@ class PerfilScreen extends StatelessWidget {
                         ),
                         elevation: 4,
                       ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ==========================
+                    //  ELIMINAR CUENTA
+                    // ==========================
+                    ListTile(
+                      leading:
+                          const Icon(Icons.delete_forever, color: Colors.red),
+                      title: const Text(
+                        'Eliminar mi cuenta permanentemente',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      onTap: _confirmarEliminacionCuenta,
                     ),
                   ],
                 ),
@@ -135,7 +292,9 @@ class PerfilScreen extends StatelessWidget {
     );
   }
 
-  // ===== Widget auxiliar =====
+  // ==========================
+  // TILE AUXILIAR
+  // ==========================
   Widget _buildInfoTile({
     required IconData icon,
     required String label,
@@ -157,19 +316,19 @@ class PerfilScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF3EC1D3)), // ✅ azul principal
+          Icon(icon, color: const Color(0xFF3EC1D3)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(
-                        color: Colors.black54, fontSize: 14)),
+                    style:
+                        const TextStyle(color: Colors.black54, fontSize: 14)),
                 const SizedBox(height: 4),
                 Text(value,
-                    style: const TextStyle(
-                        color: Colors.black87, fontSize: 16)),
+                    style:
+                        const TextStyle(color: Colors.black87, fontSize: 16)),
               ],
             ),
           ),
