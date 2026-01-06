@@ -7,7 +7,7 @@ from typing import Dict, List
 
 NUM_USERS = 5               
 QUESTIONS = 25                
-API_URL = "http://186.208.144.167:8080/tcc_api_v2/tests/guardar"
+API_URL = "http://localhost:8080/tcc_api_v2/tests/guardar"
 
 DIMENSIONS = {
     "Activo-Reflexivo": list(range(1, 7)),
