@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 06-01-2026 a las 01:26:07
+-- Tiempo de generación: 05-03-2026 a las 00:20:22
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -826,7 +826,7 @@ ALTER TABLE `usuario_extra`
 -- AUTO_INCREMENT de la tabla `detalle_respuestas`
 --
 ALTER TABLE `detalle_respuestas`
-  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_detalle` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT de la tabla `estilos_aprendizaje`
@@ -868,19 +868,19 @@ ALTER TABLE `recomendaciones`
 -- AUTO_INCREMENT de la tabla `respuestas_usuario`
 --
 ALTER TABLE `respuestas_usuario`
-  MODIFY `id_rpu` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_rpu` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `resultados_usuario`
 --
 ALTER TABLE `resultados_usuario`
-  MODIFY `id_resu` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_resu` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `resultado_dimension`
 --
 ALTER TABLE `resultado_dimension`
-  MODIFY `id_rd` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_rd` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `tests`
@@ -892,7 +892,7 @@ ALTER TABLE `tests`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id_usuarios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_usuarios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- Restricciones para tablas volcadas

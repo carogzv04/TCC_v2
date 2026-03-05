@@ -131,10 +131,7 @@ class TerminosScreen extends StatelessWidget {
                 child: Text(
                   '© 2025 AprendiApp  - Evaluación Interactiva de Estilos de Aprendizaje',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ),
               SizedBox(height: 40),

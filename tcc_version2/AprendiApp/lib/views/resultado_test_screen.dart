@@ -35,21 +35,44 @@ class ResultadoTestScreen extends StatelessWidget {
       const Color(0xFF26E24F),
     ];
 
+    // valores: porcentaje REAL de cada dimensión (el que viene del backend)
     final valores = <double>[];
     final etiquetas = <String>[];
 
-    for (var dim in dimensiones) {
+    for (var raw in dimensiones) {
+      final dim = Map<String, dynamic>.from(raw);
       final nombre = (dim['nombre'] ?? '').toString();
-      final polos = Map<String, dynamic>.from(dim)..remove('nombre');
-      if (polos.values.isEmpty) continue;
 
-      final valMax = polos.values
-          .map((v) => (v is num) ? v.toDouble() : 0.0)
-          .reduce((a, b) => a > b ? a : b);
+      // Intentar leer explícitamente el porcentaje de la dimensión
+      double porcentajeDim = 0;
 
-      valores.add(valMax);
+      if (dim['porcentaje_dimension'] is num) {
+        porcentajeDim = (dim['porcentaje_dimension'] as num).toDouble();
+      } else if (dim['porcentaje'] is num) {
+        porcentajeDim = (dim['porcentaje'] as num).toDouble();
+      }
+
+      // Si no viene porcentaje explícito, usar el máximo de los polos (fallback antiguo)
+      if (porcentajeDim <= 0) {
+        dim.remove('nombre');
+        final valoresPolos = dim.values
+            .whereType<num>()
+            .map((v) => v.toDouble())
+            .toList();
+        if (valoresPolos.isEmpty) continue;
+        porcentajeDim =
+            valoresPolos.reduce((a, b) => a > b ? a : b); // fallback
+      }
+
+      valores.add(porcentajeDim);
       etiquetas.add(nombre);
     }
+
+    // Normalizar para que el gráfico represente una distribución (sume 100)
+    final suma = valores.fold<double>(0, (acc, v) => acc + v);
+    final valoresGrafico = suma > 0
+        ? valores.map((v) => v / suma * 100).toList()
+        : List<double>.from(valores);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7D7),
@@ -84,13 +107,15 @@ class ResultadoTestScreen extends StatelessWidget {
                     centerSpaceRadius: chartSize * 0.30,
                     startDegreeOffset: -90,
                     sections: List.generate(valores.length, (i) {
-                      final valor = valores[i];
+                      final valorReal = valores[i];        // p.ej. 83.3
+                      final valorGraf = valoresGrafico[i]; // normalizado
                       final etiqueta = etiquetas[i];
+
                       return PieChartSectionData(
                         color: colores[i % colores.length],
-                        value: valor,
+                        value: valorGraf,
                         title:
-                            '${etiqueta.split('–')[0]}\n${valor.toStringAsFixed(1)}%',
+                            '${etiqueta.split('–')[0]}\n${valorReal.toStringAsFixed(1)}%',
                         radius: chartSize * 0.25,
                         titleStyle: TextStyle(
                           fontSize: chartSize * 0.035,

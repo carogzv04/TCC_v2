@@ -134,4 +134,25 @@ class ApiService {
     ).replace(queryParameters: qp);
     return _safeRequest(() => http.get(uri, headers: defaultHeaders));
   }
+
+  Future<Map<String, dynamic>> eliminarUsuario(int usuarioId) async {
+    final url = Uri.parse('$baseUrl/usuario/eliminar');
+
+    final postBody = jsonEncode({'id_usuario': usuarioId});
+    final postRes = await _safeRequest(
+      () => http.post(url, headers: defaultHeaders, body: postBody),
+    );
+    if (postRes['success'] == true) return postRes;
+
+    final urlQS = Uri.parse('$baseUrl/usuario/eliminar?id_usuario=$usuarioId');
+    final postQSRes = await _safeRequest(
+      () => http.post(urlQS, headers: defaultHeaders),
+    );
+    if (postQSRes['success'] == true) return postQSRes;
+
+    final delRes = await _safeRequest(
+      () => http.delete(urlQS, headers: defaultHeaders),
+    );
+    return delRes;
+  }
 }

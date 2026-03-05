@@ -195,12 +195,36 @@ Router::get('/usuario/perfil', function() {
         $pdo = get_pdo();
 
         if ($usuario_id) {
-            $stmt = $pdo->prepare('SELECT id_usuarios, nombre_completo, fecha_nacimiento, email, sexo, foto_perfil, fecha_registro, diagnostico_previo 
-                                   FROM usuarios WHERE id_usuarios = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT 
+                                       u.id_usuarios,
+                                       u.nombre_completo,
+                                       u.fecha_nacimiento,
+                                       u.email,
+                                       u.foto_perfil,
+                                       u.fecha_registro,
+                                       x.sexo,
+                                       x.diagnostico_previo
+                                   FROM usuarios u
+                                   LEFT JOIN usuario_extra x
+                                     ON x.usuario_id = u.id_usuarios
+                                   WHERE u.id_usuarios = ? 
+                                   LIMIT 1');
             $stmt->execute([$usuario_id]);
         } else {
-            $stmt = $pdo->prepare('SELECT id_usuarios, nombre_completo, fecha_nacimiento, email, sexo, foto_perfil, fecha_registro, diagnostico_previo 
-                                   FROM usuarios WHERE email = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT 
+                                       u.id_usuarios,
+                                       u.nombre_completo,
+                                       u.fecha_nacimiento,
+                                       u.email,
+                                       u.foto_perfil,
+                                       u.fecha_registro,
+                                       x.sexo,
+                                       x.diagnostico_previo
+                                   FROM usuarios u
+                                   LEFT JOIN usuario_extra x
+                                     ON x.usuario_id = u.id_usuarios
+                                   WHERE u.email = ? 
+                                   LIMIT 1');
             $stmt->execute([$email]);
         }
 
@@ -241,54 +265,90 @@ Router::post('/usuario/modificar', function() {
     $nombre = trim($body['nombre_completo']);
     $email  = trim($body['email']);
     $fecha  = !empty($body['fecha_nacimiento']) ? trim($body['fecha_nacimiento']) : null;
-    $sexo   = !empty($body['sexo']) ? trim($body['sexo']) : null;
-    $diag   = !empty($body['diagnostico_previo']) ? trim($body['diagnostico_previo']) : null;
+    $sexo   = isset($body['sexo']) ? trim((string)$body['sexo']) : null;
+    $diag   = isset($body['diagnostico_previo']) ? trim((string)$body['diagnostico_previo']) : null;
+
+    if ($sexo === '') {
+        $sexo = null;
+    }
+    if ($diag === '') {
+        $diag = null;
+    }
 
     try {
         $pdo = get_pdo();
+        $pdo->beginTransaction();
 
         $sql = "UPDATE usuarios 
                 SET nombre_completo = ?, 
                     email = ?, 
-                    fecha_nacimiento = ?, 
-                    sexo = ?, 
-                    diagnostico_previo = ?
+                    fecha_nacimiento = ?
                 WHERE id_usuarios = ?";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$nombre, $email, $fecha, $sexo, $diag, $id]);
+        $stmt->execute([$nombre, $email, $fecha, $id]);
 
-        // Obtener los nuevos datos actualizados
-        $select = $pdo->prepare("SELECT id_usuarios, nombre_completo, email, fecha_nacimiento, sexo, diagnostico_previo 
-                                 FROM usuarios WHERE id_usuarios = ?");
+        $selExtra = $pdo->prepare("SELECT 1 FROM usuario_extra WHERE usuario_id = ? LIMIT 1");
+        $selExtra->execute([$id]);
+        $existeExtra = (bool)$selExtra->fetchColumn();
+
+        if ($sexo === null && $diag === null) {
+            if ($existeExtra) {
+                $delExtra = $pdo->prepare("DELETE FROM usuario_extra WHERE usuario_id = ?");
+                $delExtra->execute([$id]);
+            }
+        } else {
+            if ($existeExtra) {
+                $updExtra = $pdo->prepare("UPDATE usuario_extra 
+                                           SET sexo = ?, diagnostico_previo = ? 
+                                           WHERE usuario_id = ?");
+                $updExtra->execute([$sexo, $diag, $id]);
+            } else {
+                $insExtra = $pdo->prepare("INSERT INTO usuario_extra (usuario_id, sexo, diagnostico_previo)
+                                           VALUES (?, ?, ?)");
+                $insExtra->execute([$id, $sexo, $diag]);
+            }
+        }
+
+        $select = $pdo->prepare("SELECT 
+                                     u.id_usuarios,
+                                     u.nombre_completo,
+                                     u.email,
+                                     u.fecha_nacimiento,
+                                     x.sexo,
+                                     x.diagnostico_previo
+                                 FROM usuarios u
+                                 LEFT JOIN usuario_extra x
+                                   ON x.usuario_id = u.id_usuarios
+                                 WHERE u.id_usuarios = ?");
         $select->execute([$id]);
         $usuario = $select->fetch(PDO::FETCH_ASSOC);
 
         if (!$usuario) {
+            $pdo->rollBack();
             json_response(false, 'Usuario no encontrado', null, 404);
         }
 
-        json_response(true, 'Perfil actualizado correctamente', [
-    'usuario_id' => $usuario['id_usuarios'],
-    'nombre_completo' => $usuario['nombre_completo'],
-    'email' => $usuario['email'],
-    'fecha_nacimiento' => $usuario['fecha_nacimiento'],
-    'sexo' => $usuario['sexo'],
-    'diagnostico_previo' => $usuario['diagnostico_previo']
-], 200);
+        $pdo->commit();
 
+        json_response(true, 'Perfil actualizado correctamente', [
+            'usuario_id'        => $usuario['id_usuarios'],
+            'nombre_completo'   => $usuario['nombre_completo'],
+            'email'             => $usuario['email'],
+            'fecha_nacimiento'  => $usuario['fecha_nacimiento'],
+            'sexo'              => $usuario['sexo'],
+            'diagnostico_previo'=> $usuario['diagnostico_previo']
+        ], 200);
 
     } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         json_response(false, 'Error al actualizar perfil: ' . $e->getMessage(), null, 500);
     }
 });
 
-/** DELETE /usuario/eliminar */
-Router::delete('/usuario/eliminar', function () {
-    require_once __DIR__ . '/../db.php';
-    $pdo = get_pdo();
 
-    $usuarioId = isset($_GET['id_usuario']) ? (int)$_GET['id_usuario'] : 0;
-
+function eliminar_usuario_y_dependencias(PDO $pdo, int $usuarioId): void {
     if ($usuarioId <= 0) {
         json_response(false, "Falta el parámetro id_usuario.", null, 400);
     }
@@ -298,31 +358,87 @@ Router::delete('/usuario/eliminar', function () {
 
         $stmt = $pdo->prepare("SELECT id_rpu FROM respuestas_usuario WHERE usuario_id = ?");
         $stmt->execute([$usuarioId]);
-        $ru_list = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $ruList = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        if (!empty($ru_list)) {
-            $delDetalle = $pdo->prepare("DELETE FROM detalle_respuestas WHERE ru_id = ?");
-            foreach ($ru_list as $ruId) {
-                $delDetalle->execute([$ruId]);
-            }
+        if (!empty($ruList)) {
+            $in = implode(',', array_fill(0, count($ruList), '?'));
+
+            $pdo->prepare("DELETE FROM detalle_respuestas WHERE ru_id IN ($in)")
+                ->execute($ruList);
+
+            $pdo->prepare("DELETE FROM resultado_dimension WHERE ru_id IN ($in)")
+                ->execute($ruList);
         }
 
-        $delRu = $pdo->prepare("DELETE FROM respuestas_usuario WHERE usuario_id = ?");
-        $delRu->execute([$usuarioId]);
+        $pdo->prepare("DELETE FROM resultados_usuario WHERE usuario_id = ?")
+            ->execute([$usuarioId]);
 
-        $delRes = $pdo->prepare("DELETE FROM resultados_usuario WHERE usuario_id = ?");
-        $delRes->execute([$usuarioId]);
+        $pdo->prepare("DELETE FROM respuestas_usuario WHERE usuario_id = ?")
+            ->execute([$usuarioId]);
 
-        $delUsuario = $pdo->prepare("DELETE FROM usuarios WHERE id_usuarios = ?");
-        $delUsuario->execute([$usuarioId]);
+        $pdo->prepare("DELETE FROM usuario_extra WHERE usuario_id = ?")
+            ->execute([$usuarioId]);
+
+        $pdo->prepare("DELETE FROM usuarios WHERE id_usuarios = ?")
+            ->execute([$usuarioId]);
 
         $pdo->commit();
-
         json_response(true, "Cuenta eliminada correctamente.", null, 200);
 
     } catch (Throwable $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         error_log("Error al eliminar usuario $usuarioId: " . $e->getMessage());
         json_response(false, "Error interno al eliminar la cuenta.", null, 500);
+    }
+}
+
+/** DELETE /usuario/eliminar?id_usuario=... */
+Router::delete('/usuario/eliminar', function () {
+    $pdo = get_pdo();
+
+    $usuarioId = isset($_GET['id_usuario']) ? (int)$_GET['id_usuario'] : 0;
+    eliminar_usuario_y_dependencias($pdo, $usuarioId);
+});
+
+Router::post('/usuario/eliminar', function () {
+    $pdo = get_pdo();
+
+    $raw = file_get_contents('php://input');
+    $json = json_decode($raw, true);
+    $usuarioId = 0;
+
+    if (is_array($json) && isset($json['id_usuario'])) {
+        $usuarioId = (int)$json['id_usuario'];
+    } elseif (isset($_POST['id_usuario'])) {
+        $usuarioId = (int)$_POST['id_usuario'];
+    } elseif (isset($_GET['id_usuario'])) {
+        $usuarioId = (int)$_GET['id_usuario'];
+    }
+
+    eliminar_usuario_y_dependencias($pdo, $usuarioId);
+});
+
+/** POST /usuario/anonimizar */
+Router::post('/usuario/anonimizar', function () {
+    $body = json_decode(file_get_contents('php://input'), true);
+    $id = isset($body['id_usuario']) ? (int)$body['id_usuario'] : 0;
+
+    if ($id <= 0) {
+        json_response(false, 'Debe enviar id_usuario', null, 400);
+    }
+
+    try {
+        $pdo = get_pdo();
+
+        $stmt = $pdo->prepare("UPDATE usuario_extra 
+                               SET sexo = NULL, diagnostico_previo = NULL 
+                               WHERE usuario_id = ?");
+        $stmt->execute([$id]);
+
+        json_response(true, 'Datos sensibles anonimizados correctamente', null, 200);
+    } catch (Throwable $e) {
+        json_response(false, 'Error al anonimizar datos: ' . $e->getMessage(), null, 500);
     }
 });
